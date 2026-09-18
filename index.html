@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧚 Cartea Fermecată — Traducător Norvegiană → Română pentru copii</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#ffd1e3;
+    --pink-deep:#ff8fb8;
+    --lav:#e3d4ff;
+    --lav-deep:#b28dff;
+    --mint:#c8f4e0;
+    --mint-deep:#4fd1a5;
+    --sky:#cfe8ff;
+    --sky-deep:#5eb0ff;
+    --sun:#fff2b8;
+    --sun-deep:#ffcf4d;
+    --peach:#ffe0cc;
+    --ink:#4a3f6b;
+    --ink-soft:#7a6f97;
+    --paper:#fffdf9;
+    --shadow:0 10px 30px rgba(120,90,180,.18);
+    --radius:22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Quicksand',system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 18%, var(--pink) 0, transparent 40%),
+      radial-gradient(circle at 88% 12%, var(--sky) 0, transparent 42%),
+      radial-gradient(circle at 78% 88%, var(--mint) 0, transparent 45%),
+      radial-gradient(circle at 20% 85%, var(--sun) 0, transparent 42%),
+      linear-gradient(180deg,#fef8ff 0%,#f3f7ff 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    line-height:1.55;
+  }
+  h1,h2,h3,.brand,button,.tab,.mode-btn{font-family:'Fredoka',sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 80px;}
+
+  /* Header */
+  header.hero{
+    text-align:center;
+    padding:22px 18px 18px;
+    background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.55));
+    border:3px solid #fff;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(6px);
+    position:relative;
+    overflow:hidden;
+  }
+  header.hero .blob{position:absolute;font-size:40px;opacity:.55;pointer-events:none;animation:float 6s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(6deg)}}
+  .brand{font-size:clamp(26px,4.5vw,42px);font-weight:700;margin:0;letter-spacing:.3px;
+    background:linear-gradient(90deg,var(--pink-deep),var(--lav-deep),var(--sky-deep),var(--mint-deep));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .brand .flag{-webkit-text-fill-color:initial;}
+  .tagline{margin:6px 0 0;color:var(--ink-soft);font-weight:600;font-size:clamp(13px,2vw,17px);}
+
+  /* API + controls bar */
+  .bar{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    margin-top:16px;
+  }
+  .card{
+    background:var(--paper);
+    border:3px solid #fff;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+  }
+  .apikey-card{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;width:100%;margin-top:16px;}
+  .apikey-card label{font-weight:700;white-space:nowrap;}
+  .apikey-card input{
+    flex:1;min-width:220px;padding:11px 14px;border-radius:14px;border:2px solid var(--lav);
+    font-family:'Quicksand';font-size:15px;background:#fff;color:var(--ink);outline:none;transition:.2s;
+  }
+  .apikey-card input:focus{border-color:var(--lav-deep);box-shadow:0 0 0 4px rgba(178,141,255,.25);}
+  .apikey-card select{padding:11px 12px;border-radius:14px;border:2px solid var(--sky);font-family:'Quicksand';font-weight:600;background:#fff;color:var(--ink);}
+  .hint{font-size:12.5px;color:var(--ink-soft);width:100%;text-align:center;margin-top:6px;}
+  .hint a{color:var(--lav-deep);font-weight:700;}
+
+  button{
+    cursor:pointer;border:none;border-radius:16px;padding:12px 18px;font-size:15px;font-weight:600;
+    color:#fff;transition:transform .15s,box-shadow .15s,filter .15s;box-shadow:0 6px 0 rgba(0,0,0,.08);
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  button:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.08);}
+  button:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.3);}
+  .btn-pink{background:linear-gradient(135deg,var(--pink-deep),#ff6fa5);}
+  .btn-lav{background:linear-gradient(135deg,var(--lav-deep),#9a6bff);}
+  .btn-mint{background:linear-gradient(135deg,var(--mint-deep),#2fc490);}
+  .btn-sky{background:linear-gradient(135deg,var(--sky-deep),#3f97ff);}
+  .btn-sun{background:linear-gradient(135deg,var(--sun-deep),#ffb703);color:#6b4b00;text-shadow:none;}
+  .btn-ghost{background:#fff;color:var(--ink);border:2px solid var(--lav);box-shadow:0 6px 0 rgba(178,141,255,.18);}
+
+  .layout{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;}
+  @media(max-width:880px){.layout{grid-template-columns:1fr;}}
+
+  /* Drop zone */
+  .dropzone{
+    border:3px dashed var(--lav-deep);border-radius:var(--radius);background:linear-gradient(180deg,#fff,#faf6ff);
+    padding:26px 18px;text-align:center;transition:.2s;cursor:pointer;
+  }
+  .dropzone.drag{background:var(--lav);border-color:var(--pink-deep);transform:scale(1.01);}
+  .dropzone .big-emoji{font-size:52px;display:block;animation:float 5s ease-in-out infinite;}
+  .dropzone h3{margin:8px 0 4px;font-size:20px;}
+  .dropzone p{margin:0 0 12px;color:var(--ink-soft);font-weight:600;}
+  .dz-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+
+  /* Image viewer */
+  .viewer-card{padding:0;overflow:hidden;display:flex;flex-direction:column;}
+  .viewer-toolbar{display:flex;gap:8px;align-items:center;padding:12px 14px;flex-wrap:wrap;background:linear-gradient(90deg,var(--sky),var(--mint));}
+  .viewer-toolbar .zbtn{background:#fff;color:var(--ink);padding:8px 12px;border-radius:12px;font-size:16px;box-shadow:0 4px 0 rgba(0,0,0,.08);}
+  .viewer-toolbar .spacer{flex:1;}
+  .viewer-toolbar .zlabel{font-weight:700;font-size:13px;color:var(--ink);background:rgba(255,255,255,.7);padding:6px 10px;border-radius:10px;}
+  .stage{
+    position:relative;flex:1;min-height:320px;max-height:520px;overflow:hidden;background:
+      repeating-conic-gradient(#f3eefe 0% 25%, #fff 0% 50%) 50%/26px 26px;
+    display:flex;align-items:center;justify-content:center;cursor:grab;
+  }
+  .stage.dragging{cursor:grabbing;}
+  .stage img{max-width:none;user-select:none;-webkit-user-drag:none;transform-origin:center center;transition:transform .05s linear;}
+  .stage .placeholder{color:var(--ink-soft);font-weight:600;text-align:center;padding:30px;}
+  .stage .placeholder .big{font-size:60px;display:block;margin-bottom:8px;opacity:.6;}
+
+  /* Result panel */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .mode-btn{background:#fff;color:var(--ink-soft);border:2px solid var(--lav);box-shadow:none;padding:9px 14px;font-size:14px;border-radius:14px;}
+  .mode-btn.active{background:linear-gradient(135deg,var(--lav-deep),#9a6bff);color:#fff;border-color:transparent;box-shadow:0 5px 0 rgba(154,107,255,.3);}
+
+  .result-card{grid-column:1 / -1;}
+  .story{
+    background:linear-gradient(180deg,#fffdf6,#fff);border-radius:18px;border:2px solid var(--sun);
+    padding:22px 24px;font-size:19px;line-height:1.85;white-space:pre-wrap;min-height:120px;
+    box-shadow:inset 0 2px 10px rgba(255,207,77,.12);
+  }
+  .story.no{border-color:var(--sky);}
+  .parallel{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:720px){.parallel{grid-template-columns:1fr;}}
+  .col-title{font-family:'Fredoka';font-weight:700;font-size:15px;margin:0 0 8px;display:flex;align-items:center;gap:6px;}
+  .col-title.no{color:var(--sky-deep);}
+  .col-title.ro{color:var(--pink-deep);}
+
+  .section-title{font-family:'Fredoka';font-size:22px;margin:26px 0 12px;display:flex;align-items:center;gap:10px;}
+  .terms{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+  .term{background:linear-gradient(135deg,#fff,#f3fff9);border:2px solid var(--mint);border-radius:16px;padding:14px 16px;}
+  .term b{color:var(--mint-deep);font-family:'Fredoka';font-size:17px;display:flex;align-items:center;gap:6px;}
+  .term p{margin:6px 0 0;font-size:14.5px;color:var(--ink-soft);font-weight:500;}
+
+  table.vocab{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:16px;border:2px solid var(--sky);}
+  table.vocab th{background:linear-gradient(135deg,var(--sky-deep),#3f97ff);color:#fff;font-family:'Fredoka';padding:12px 14px;text-align:left;font-size:15px;}
+  table.vocab td{padding:11px 14px;border-top:1px solid #eaf3ff;font-weight:600;font-size:15px;}
+  table.vocab tr:nth-child(even) td{background:#f6fbff;}
+  table.vocab td.play{width:44px;text-align:center;cursor:pointer;font-size:18px;}
+  table.vocab td.play:hover{transform:scale(1.2);}
+
+  /* Audio bar */
+  .audio-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;}
+  .audio-bar .speed{display:flex;align-items:center;gap:8px;font-weight:700;background:#fff;padding:8px 14px;border-radius:14px;border:2px solid var(--mint);}
+  .audio-bar input[type=range]{accent-color:var(--mint-deep);}
+
+  .empty-note{color:var(--ink-soft);font-weight:600;text-align:center;padding:20px;font-style:italic;}
+
+  /* Loader */
+  .loader{display:none;text-align:center;padding:24px;}
+  .loader.show{display:block;}
+  .loader .spin{width:54px;height:54px;border:6px solid var(--lav);border-top-color:var(--lav-deep);border-radius:50%;margin:0 auto 12px;animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loader p{font-weight:700;color:var(--ink-soft);}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:16px;font-weight:600;box-shadow:var(--shadow);z-index:9999;transition:transform .35s;max-width:90vw;text-align:center;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.err{background:#e0567a;}
+  .toast.ok{background:var(--mint-deep);}
+
+  .badge{display:inline-block;background:var(--sun);color:#7a5b00;font-weight:700;font-size:12px;padding:3px 10px;border-radius:20px;font-family:'Fredoka';}
+  footer{text-align:center;margin-top:36px;color:var(--ink-soft);font-weight:600;font-size:13px;}
+  footer .heart{color:var(--pink-deep);}
+
+  /* Print */
+  @media print{
+    body{background:#fff;}
+    .no-print,header.hero .bar,.dropzone,.viewer-toolbar,.tabs,.audio-bar,.bar,.apikey-card,footer{display:none !important;}
+    .card{box-shadow:none;border:1px solid #ddd;}
+    .story{border-color:#ccc;box-shadow:none;}
+    .layout{display:block;}
+    .stage{max-height:none;}
+    .stage img{max-width:100% !important;transform:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="blob" style="left:4%;top:10%;">⭐</span>
+    <span class="blob" style="right:6%;top:16%;animation-delay:1s;">🌈</span>
+    <span class="blob" style="left:10%;bottom:6%;animation-delay:2s;">🐻</span>
+    <span class="blob" style="right:10%;bottom:8%;animation-delay:1.5s;">🧚</span>
+    <h1 class="brand">🧚 Cartea Fermecată <span class="flag">🇳🇴→🇷🇴</span></h1>
+    <p class="tagline">Fotografiază o pagină de carte în norvegiană și o transformăm într-o poveste caldă în română!</p>
+
+    <div class="apikey-card card">
+      <label for="apiKey">🔑 Cheie API Gemini:</label>
+      <input type="password" id="apiKey" placeholder="Lipește aici cheia ta API (rămâne doar în browserul tău)" autocomplete="off">
+      <select id="modelSel" title="Alege modelul Gemini">
+        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+      </select>
+      <button class="btn-ghost" id="saveKey" type="button">💾 Salvează</button>
+      <div class="hint">Nu ai o cheie? Ia una gratuit de la <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Sau apasă <b>Demo</b> ca să testezi fără cheie. Cheia este stocată doar local (localStorage).</div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Upload -->
+    <div class="card">
+      <div class="dropzone" id="dropzone">
+        <span class="big-emoji">📚</span>
+        <h3>Trage o poză aici</h3>
+        <p>sau alege una dintre opțiuni</p>
+        <div class="dz-btns">
+          <button class="btn-lav" id="pickBtn" type="button">🖼️ Alege imagine</button>
+          <button class="btn-pink" id="camBtn" type="button">📷 Fă o poză</button>
+          <button class="btn-sun" id="demoBtn" type="button">✨ Mod Demo</button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+      </div>
+      <div style="text-align:center;margin-top:14px;">
+        <button class="btn-mint" id="translateBtn" type="button" disabled>🪄 Tradu pagina!</button>
+        <button class="btn-ghost no-print" id="clearBtn" type="button">🧹 Șterge tot</button>
+      </div>
+    </div>
+
+    <!-- Viewer -->
+    <div class="card viewer-card">
+      <div class="viewer-toolbar">
+        <button class="zbtn" id="zoomOut" type="button" title="Micșorează">➖</button>
+        <button class="zbtn" id="zoomIn" type="button" title="Mărește">➕</button>
+        <button class="zbtn" id="zoomReset" type="button" title="Resetează">🔄</button>
+        <span class="zlabel" id="zoomLabel">100%</span>
+        <span class="spacer"></span>
+        <span class="zlabel">🔍 Trage cu mouse-ul pentru panoramare</span>
+      </div>
+      <div class="stage" id="stage">
+        <div class="placeholder" id="stagePlaceholder">
+          <span class="big">🖼️</span>
+          Aici va apărea pagina cărții tale
+        </div>
+        <img id="previewImg" alt="Pagina cărții" style="display:none;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Loader -->
+  <div class="loader card" id="loader">
+    <div class="spin"></div>
+    <p id="loaderMsg">Citim povestea... ✨ (OCR + traducere magică în curs)</p>
+  </div>
+
+  <!-- Results -->
+  <div class="card result-card" id="resultCard" style="display:none;">
+    <div class="tabs" role="tablist">
+      <button class="mode-btn active" data-mode="ro" type="button">🇷🇴 Doar Română</button>
+      <button class="mode-btn" data-mode="parallel" type="button">🔀 Paralel (NO / RO)</button>
+      <button class="mode-btn" data-mode="no" type="button">🇳🇴 Text OCR Norvegian</button>
+    </div>
+
+    <!-- Audio controls -->
+    <div class="audio-bar no-print">
+      <button class="btn-mint" id="playBtn" type="button">▶️ Citește</button>
+      <button class="btn-sky" id="pauseBtn" type="button" disabled>⏸️ Pauză</button>
+      <button class="btn-pink" id="stopBtn" type="button" disabled>⏹️ Oprește</button>
+      <div class="speed">
+        🐢 <input type="range" id="rate" min="0.5" max="1.6" step="0.1" value="0.95"> 🐇
+        <span id="rateLabel">0.95×</span>
+      </div>
+      <button class="btn-ghost" id="printBtn" type="button">🖨️ Imprimă / Exportă PDF</button>
+    </div>
+
+    <!-- Story views -->
+    <div id="viewRo">
+      <div class="story" id="storyRo"></div>
+    </div>
+    <div id="viewParallel" style="display:none;">
+      <div class="parallel">
+        <div>
+          <p class="col-title no">🇳🇴 Norvegiană (original)</p>
+          <div class="story no" id="parNo"></div>
+        </div>
+        <div>
+          <p class="col-title ro">🇷🇴 Română (poveste)</p>
+          <div class="story" id="parRo"></div>
+        </div>
+      </div>
+    </div>
+    <div id="viewNo" style="display:none;">
+      <div class="story no" id="storyNo"></div>
+    </div>
+
+    <!-- Cultural terms -->
+    <div id="termsSection" style="display:none;">
+      <div class="section-title">🧌 Comori din folclorul norvegian</div>
+      <div class="terms" id="termsBox"></div>
+    </div>
+
+    <!-- Vocabulary -->
+    <div id="vocabSection" style="display:none;">
+      <div class="section-title">📖 Micul dicționar (Norvegiană → Română)</div>
+      <table class="vocab">
+        <thead><tr><th>🔊</th><th>🇳🇴 Norvegiană</th><th>🇷🇴 Română</th></tr></thead>
+        <tbody id="vocabBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    Făcut cu <span class="heart">♥</span> pentru micii cititori curioși &middot; Cartea Fermecată &middot;
+    <span class="badge">1 fișier HTML · fără framework-uri</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   Cartea Fermecată — traducător NO→RO pentru cărți de copii
+   Un singur fișier, fără dependențe (doar Google Fonts + Gemini API)
+   ========================================================= */
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------- State ---------- */
+const state = {
+  imageDataUrl: null,   // data URL of loaded image
+  imageMime: null,
+  result: null,         // {no, ro, terms:[{term,explain}], vocab:[{no,ro}]}
+  mode: "ro",
+  zoom: 1, panX: 0, panY: 0,
+};
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg, type="") {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "toast show " + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.className = "toast " + type), 3800);
+}
+
+/* ---------- API key persistence ---------- */
+(function initKey(){
+  const saved = localStorage.getItem("gemini_api_key");
+  if (saved) $("apiKey").value = saved;
+  const savedModel = localStorage.getItem("gemini_model");
+  if (savedModel) $("modelSel").value = savedModel;
+})();
+$("saveKey").addEventListener("click", () => {
+  const k = $("apiKey").value.trim();
+  localStorage.setItem("gemini_api_key", k);
+  localStorage.setItem("gemini_model", $("modelSel").value);
+  toast(k ? "Cheia a fost salvată local! 🔐" : "Cheie ștearsă.", "ok");
+});
+$("modelSel").addEventListener("change", () =>
+  localStorage.setItem("gemini_model", $("modelSel").value));
+
+/* =========================================================
+   IMAGE LOADING (file / camera / drag&drop)
+   ========================================================= */
+const dropzone = $("dropzone");
+const stage = $("stage");
+const previewImg = $("previewImg");
+const stagePlaceholder = $("stagePlaceholder");
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    toast("Te rog alege un fișier imagine 🖼️", "err");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => setImage(e.target.result, file.type);
+  reader.readAsDataURL(file);
+}
+
+function setImage(dataUrl, mime) {
+  state.imageDataUrl = dataUrl;
+  state.imageMime = mime || "image/png";
+  previewImg.src = dataUrl;
+  previewImg.style.display = "block";
+  stagePlaceholder.style.display = "none";
+  resetZoom();
+  $("translateBtn").disabled = false;
+  toast("Imagine încărcată! Apasă „Tradu pagina!” 🪄", "ok");
+}
+
+$("pickBtn").addEventListener("click", () => $("fileInput").click());
+$("camBtn").addEventListener("click", () => $("camInput").click());
+$("fileInput").addEventListener("change", (e) => handleFile(e.target.files[0]));
+$("camInput").addEventListener("change", (e) => handleFile(e.target.files[0]));
+dropzone.addEventListener("click", (e) => {
+  // avoid double-trigger when clicking the inner buttons
+  if (e.target.closest("button")) return;
+  $("fileInput").click();
+});
+
+["dragenter","dragover"].forEach(ev =>
+  dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("drag"); }));
+["dragleave","drop"].forEach(ev =>
+  dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove("drag"); }));
+dropzone.addEventListener("drop", (e) => {
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+// Allow paste from clipboard
+window.addEventListener("paste", (e) => {
+  const item = [...(e.clipboardData?.items||[])].find(i => i.type.startsWith("image/"));
+  if (item) handleFile(item.getAsFile());
+});
+
+/* =========================================================
+   IMAGE VIEWER — zoom & pan
+   ========================================================= */
+function applyTransform() {
+  previewImg.style.transform =
+    `translate(${state.panX}px,${state.panY}px) scale(${state.zoom})`;
+  $("zoomLabel").textContent = Math.round(state.zoom * 100) + "%";
+}
+function resetZoom(){ state.zoom=1; state.panX=0; state.panY=0; applyTransform(); }
+function zoomBy(f){
+  state.zoom = Math.min(6, Math.max(0.2, state.zoom * f));
+  applyTransform();
+}
+$("zoomIn").addEventListener("click", () => zoomBy(1.2));
+$("zoomOut").addEventListener("click", () => zoomBy(1/1.2));
+$("zoomReset").addEventListener("click", resetZoom);
+
+stage.addEventListener("wheel", (e) => {
+  if (!state.imageDataUrl) return;
+  e.preventDefault();
+  zoomBy(e.deltaY < 0 ? 1.1 : 1/1.1);
+}, { passive:false });
+
+let panning=false, startX=0, startY=0;
+stage.addEventListener("mousedown", (e) => {
+  if (!state.imageDataUrl) return;
+  panning=true; stage.classList.add("dragging");
+  startX = e.clientX - state.panX; startY = e.clientY - state.panY;
+});
+window.addEventListener("mousemove", (e) => {
+  if (!panning) return;
+  state.panX = e.clientX - startX; state.panY = e.clientY - startY;
+  applyTransform();
+});
+window.addEventListener("mouseup", () => { panning=false; stage.classList.remove("dragging"); });
+// touch pan
+stage.addEventListener("touchstart", (e) => {
+  if (!state.imageDataUrl || e.touches.length!==1) return;
+  panning=true; startX=e.touches[0].clientX-state.panX; startY=e.touches[0].clientY-state.panY;
+}, {passive:true});
+stage.addEventListener("touchmove", (e) => {
+  if (!panning || e.touches.length!==1) return;
+  state.panX=e.touches[0].clientX-startX; state.panY=e.touches[0].clientY-startY; applyTransform();
+}, {passive:true});
+stage.addEventListener("touchend", () => panning=false);
+
+/* =========================================================
+   GEMINI API — OCR + translation
+   ========================================================= */
+const PROMPT = `Ești un traducător fermecat de cărți pentru copii. Primești imaginea unei pagini dintr-o carte pentru copii scrisă în limba NORVEGIANĂ.
+
+Sarcinile tale:
+1. Extrage (OCR) tot textul norvegian de pe pagină, exact cum apare, păstrând rândurile/paragrafele.
+2. Tradu textul în limba ROMÂNĂ folosind un limbaj cald, expresiv, poetic și potrivit pentru copii mici. Păstrează ritmul, rima (dacă există) și atmosfera de poveste a originalului. Nu traduce cuvânt cu cuvânt — recreează magia poveștii.
+3. Identifică termeni culturali sau din folclorul norvegian (ex: troll, nisse, fjord, hulder, tomte, Sankthans etc.) și explică-i pe înțelesul copiilor, în 1-2 propoziții calde.
+4. Extrage 6-14 cuvinte-cheie utile din text și oferă un mic dicționar norvegiană → română.
+
+Răspunde DOAR cu un obiect JSON valid, fără text în plus, fără markdown, în această structură exactă:
+{
+  "norwegian_text": "textul original norvegian extras",
+  "romanian_translation": "povestea tradusă frumos în română",
+  "cultural_terms": [{"term":"...", "explanation":"..."}],
+  "vocabulary": [{"norwegian":"...", "romanian":"..."}]
+}
+Dacă imaginea nu conține text norvegian lizibil, întoarce câmpurile cu șiruri goale și liste goale.`;
+
+async function callGemini() {
+  const key = $("apiKey").value.trim();
+  if (!key) { toast("Adaugă întâi cheia API Gemini 🔑 (sau folosește Mod Demo)", "err"); return; }
+  if (!state.imageDataUrl) { toast("Încarcă mai întâi o imagine 🖼️", "err"); return; }
+
+  const model = $("modelSel").value;
+  const base64 = state.imageDataUrl.split(",")[1];
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const body = {
+    contents: [{
+      parts: [
+        { text: PROMPT },
+        { inline_data: { mime_type: state.imageMime, data: base64 } }
+      ]
+    }],
+    generationConfig: { temperature: 0.7, responseMimeType: "application/json" }
+  };
+
+  showLoader(true, "Citim povestea... ✨ (OCR + traducere magică în curs)");
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      let detail = "";
+      try { detail = (await res.json())?.error?.message || ""; } catch(_) {}
+      throw new Error(`Eroare API (${res.status}). ${detail}`);
+    }
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join("") || "";
+    const parsed = parseJson(text);
+    if (!parsed) throw new Error("Răspunsul nu a putut fi interpretat. Încearcă din nou.");
+    applyResult(parsed);
+    toast("Gata! Povestea a fost tradusă 🎉", "ok");
+  } catch (err) {
+    console.error(err);
+    toast(err.message || "Ceva n-a mers. Verifică cheia și conexiunea.", "err");
+  } finally {
+    showLoader(false);
+  }
+}
+
+function parseJson(text) {
+  if (!text) return null;
+  // Try direct
+  try { return normalize(JSON.parse(text)); } catch(_) {}
+  // Strip code fences / extract first {...}
+  const m = text.match(/\{[\s\S]*\}/);
+  if (m) { try { return normalize(JSON.parse(m[0])); } catch(_) {} }
+  return null;
+}
+function normalize(obj) {
+  return {
+    no: obj.norwegian_text || obj.norwegian || "",
+    ro: obj.romanian_translation || obj.romanian || "",
+    terms: (obj.cultural_terms || []).map(t => ({
+      term: t.term || t.word || "", explain: t.explanation || t.explain || ""
+    })).filter(t=>t.term),
+    vocab: (obj.vocabulary || []).map(v => ({
+      no: v.norwegian || v.no || "", ro: v.romanian || v.ro || ""
+    })).filter(v=>v.no),
+  };
+}
+
+/* =========================================================
+   RENDER RESULTS
+   ========================================================= */
+function applyResult(r) {
+  state.result = r;
+  $("storyRo").textContent = r.ro || "(fără traducere)";
+  $("parRo").textContent = r.ro || "(fără traducere)";
+  $("storyNo").textContent = r.no || "(fără text norvegian)";
+  $("parNo").textContent = r.no || "(fără text norvegian)";
+
+  // terms
+  const tb = $("termsBox");
+  tb.innerHTML = "";
+  if (r.terms.length) {
+    r.terms.forEach(t => {
+      const d = document.createElement("div");
+      d.className = "term";
+      d.innerHTML = `<b>🧚 ${esc(t.term)}</b><p>${esc(t.explain)}</p>`;
+      tb.appendChild(d);
+    });
+    $("termsSection").style.display = "block";
+  } else $("termsSection").style.display = "none";
+
+  // vocab
+  const vb = $("vocabBody");
+  vb.innerHTML = "";
+  if (r.vocab.length) {
+    r.vocab.forEach(v => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="play" title="Ascultă românește">🔊</td>
+        <td>${esc(v.no)}</td><td>${esc(v.ro)}</td>`;
+      tr.querySelector(".play").addEventListener("click", () => speakOnce(v.ro));
+      vb.appendChild(tr);
+    });
+    $("vocabSection").style.display = "block";
+  } else $("vocabSection").style.display = "none";
+
+  $("resultCard").style.display = "block";
+  setMode(state.mode);
+  $("resultCard").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* View mode switching */
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll(".mode-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.mode === mode));
+  $("viewRo").style.display       = mode === "ro" ? "block" : "none";
+  $("viewParallel").style.display = mode === "parallel" ? "block" : "none";
+  $("viewNo").style.display       = mode === "no" ? "block" : "none";
+}
+document.querySelectorAll(".mode-btn").forEach(b =>
+  b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+/* Loader */
+function showLoader(show, msg) {
+  $("loader").classList.toggle("show", show);
+  if (msg) $("loaderMsg").textContent = msg;
+  $("translateBtn").disabled = show || !state.imageDataUrl;
+}
+
+/* =========================================================
+   TEXT-TO-SPEECH (Romanian)
+   ========================================================= */
+const synth = window.speechSynthesis;
+let roVoice = null;
+function pickVoice() {
+  const voices = synth.getVoices();
+  roVoice = voices.find(v => /ro(-|_)?/i.test(v.lang)) ||
+            voices.find(v => /rom[aâ]n/i.test(v.name)) || null;
+}
+if (synth) {
+  pickVoice();
+  synth.onvoiceschanged = pickVoice;
+}
+
+function currentSpeakText() {
+  if (!state.result) return "";
+  if (state.mode === "no") return state.result.no;
+  return state.result.ro; // ro + parallel read the Romanian story
+}
+
+function speak() {
+  if (!synth) { toast("Browserul tău nu suportă citirea vocală 😔", "err"); return; }
+  if (synth.paused) { synth.resume(); setAudioState("playing"); return; }
+  const text = currentSpeakText();
+  if (!text) { toast("Nu există text de citit.", "err"); return; }
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = state.mode === "no" ? "nb-NO" : "ro-RO";
+  if (state.mode !== "no" && roVoice) u.voice = roVoice;
+  u.rate = parseFloat($("rate").value);
+  u.pitch = 1.05;
+  u.onend = () => setAudioState("stopped");
+  u.onerror = () => setAudioState("stopped");
+  synth.speak(u);
+  setAudioState("playing");
+}
+function speakOnce(text) {
+  if (!synth || !text) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ro-RO"; if (roVoice) u.voice = roVoice;
+  u.rate = parseFloat($("rate").value);
+  synth.speak(u);
+}
+function setAudioState(s) {
+  const playing = s === "playing";
+  $("playBtn").disabled = playing;
+  $("pauseBtn").disabled = !playing;
+  $("stopBtn").disabled = s === "stopped";
+}
+$("playBtn").addEventListener("click", speak);
+$("pauseBtn").addEventListener("click", () => { if (synth.speaking){ synth.pause(); setAudioState("paused"); }});
+$("stopBtn").addEventListener("click", () => { synth.cancel(); setAudioState("stopped"); });
+$("rate").addEventListener("input", () => $("rateLabel").textContent = parseFloat($("rate").value).toFixed(2) + "×");
+
+/* =========================================================
+   DEMO MODE — preloaded page (no API key needed)
+   ========================================================= */
+const DEMO = {
+  no: `Det var en gang tre bukkene Bruse
+som skulle gå til seters for å gjøre seg fete.
+På veien var det en bru over en foss,
+og under brua bodde et fælt og fryktelig troll,
+med øyne store som tinntallerkener
+og nese så lang som et riveskaft.
+
+"Hvem er det som tramper på broa mi?" brølte trollet.
+"Det er bare meg, den minste bukken Bruse," sa den lille med sin fine, spede stemme.
+"Nå kommer jeg og tar deg!" sa trollet.
+"Å nei, ta ikke meg, jeg er så liten," sa bukken.`,
+  ro: `A fost odată ca niciodată trei iezi pe nume Bruse,
+care porniseră spre pășunea din munți ca să se îngrașe și să crească voinici.
+Pe drum era un podeț peste o cascadă spumoasă,
+iar sub el trăia un troll fioros și înfricoșător,
+cu ochii mari cât niște talere de cositor
+și cu nasul lung cât coada unei greble.
+
+„Cine tropăie pe podul meu?" răcni trollul cu glas de tunet.
+„Sunt doar eu, cel mai mic dintre iezii Bruse," șopti cel mititel cu vocea lui subțire și gingașă.
+„Acum vin și te înfulec!" mârâi trollul.
+„Vai, nu pe mine! Sunt atât de micuț," se rugă iedul.`,
+  terms: [
+    { term: "Troll", explain: "În poveștile norvegiene, trolii sunt uriași uituci și cam năzdrăvani care trăiesc în munți sau sub poduri. Sunt mari și urâcioși, dar copiii isteți îi pot păcăli mereu!" },
+    { term: "Seter (pășunea din munți)", explain: "Este o pajiște înaltă în munți unde, vara, animalele erau duse să pască iarbă proaspătă și să se îngrașe — un fel de tabără de vară pentru capre și vaci." },
+    { term: "Foss (cascadă)", explain: "O cascadă — apa care se prăvălește zgomotos de pe o stâncă. În Norvegia sunt foarte multe, printre munți și fiorduri." }
+  ],
+  vocab: [
+    { no: "bukk", ro: "ied / țap" },
+    { no: "bru", ro: "pod" },
+    { no: "troll", ro: "troll (uriaș din folclor)" },
+    { no: "foss", ro: "cascadă" },
+    { no: "øyne", ro: "ochi" },
+    { no: "nese", ro: "nas" },
+    { no: "liten", ro: "mic" },
+    { no: "stemme", ro: "voce" },
+    { no: "broa", ro: "podul" },
+    { no: "seter", ro: "pășune de munte" }
+  ]
+};
+// A tiny inline SVG "book page" illustration so the demo also shows an image.
+const DEMO_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(`
+<svg xmlns='http://www.w3.org/2000/svg' width='640' height='820' viewBox='0 0 640 820'>
+  <defs>
+    <linearGradient id='sky' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0' stop-color='#cfe8ff'/><stop offset='1' stop-color='#eafff4'/>
+    </linearGradient>
+  </defs>
+  <rect width='640' height='820' fill='#fffdf6'/>
+  <rect x='24' y='24' width='592' height='772' rx='24' fill='#fff' stroke='#ffcf4d' stroke-width='4'/>
+  <rect x='56' y='56' width='528' height='300' rx='18' fill='url(#sky)'/>
+  <circle cx='150' cy='150' r='40' fill='#ffcf4d'/>
+  <path d='M56 356 Q200 250 340 356 T584 356 L584 356 L56 356 Z' fill='#4fd1a5' opacity='.8'/>
+  <rect x='300' y='250' width='120' height='106' fill='#b28dff'/>
+  <path d='M290 250 L360 200 L430 250 Z' fill='#9a6bff'/>
+  <text x='170' y='300' font-family='Georgia' font-size='34' fill='#5a4a2a'>🐐 🐐 🐐</text>
+  <text x='320' y='430' text-anchor='middle' font-family='Georgia' font-size='30' font-weight='bold' fill='#4a3f6b'>De tre bukkene Bruse</text>
+  <text x='60' y='500' font-family='Georgia' font-size='22' fill='#4a3f6b'>Det var en gang tre bukkene Bruse</text>
+  <text x='60' y='534' font-family='Georgia' font-size='22' fill='#4a3f6b'>som skulle gå til seters for å</text>
+  <text x='60' y='568' font-family='Georgia' font-size='22' fill='#4a3f6b'>gjøre seg fete. Under brua bodde</text>
+  <text x='60' y='602' font-family='Georgia' font-size='22' fill='#4a3f6b'>et fælt og fryktelig troll ...</text>
+  <text x='320' y='770' text-anchor='middle' font-family='Georgia' font-size='16' fill='#9a8fb0'>— Pagină demo · folclor norvegian —</text>
+</svg>`);
+
+$("demoBtn").addEventListener("click", () => {
+  setImage(DEMO_IMG, "image/svg+xml");
+  showLoader(true, "Pregătim povestea demo... ✨");
+  setTimeout(() => {
+    showLoader(false);
+    applyResult(JSON.parse(JSON.stringify(DEMO)));
+    toast("Mod Demo activat — nu ai nevoie de cheie API! ✨", "ok");
+  }, 700);
+});
+
+/* =========================================================
+   BUTTONS: translate / clear / print
+   ========================================================= */
+$("translateBtn").addEventListener("click", callGemini);
+$("printBtn").addEventListener("click", () => window.print());
+$("clearBtn").addEventListener("click", () => {
+  synth && synth.cancel();
+  state.imageDataUrl = null; state.result = null;
+  previewImg.src = ""; previewImg.style.display = "none";
+  stagePlaceholder.style.display = "block";
+  $("resultCard").style.display = "none";
+  $("translateBtn").disabled = true;
+  resetZoom();
+  $("fileInput").value = ""; $("camInput").value = "";
+  toast("Am șters tot. Poți începe o poveste nouă! 🧹", "ok");
+});
+
+// keyboard: Enter on api key -> save
+$("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey").click(); });
+</script>
+</body>
+</html>
