@@ -144,7 +144,7 @@
   .ocr-options{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin-top:14px;
     background:linear-gradient(135deg,#f6fbff,#f3fff9);border:2px solid var(--sky);border-radius:16px;padding:10px 12px;}
   .ocr-options label{font-weight:700;font-size:14px;}
-  .ocr-options select{padding:8px 10px;border-radius:12px;border:2px solid var(--sky);font-family:'Quicksand';font-weight:600;background:#fff;color:var(--ink);font-size:14px;}
+  .ocr-options select,.ocr-options input{padding:8px 10px;border-radius:12px;border:2px solid var(--sky);font-family:'Quicksand';font-weight:600;background:#fff;color:var(--ink);font-size:14px;}
   .zbtn#cropBtn{width:auto;font-family:'Fredoka';font-size:13px;padding:8px 14px;background:linear-gradient(135deg,#ffd9e8,#ffc2da);color:#c23b6a;}
   .zbtn#cropBtn.active{background:var(--pink-deep);color:#fff;}
   .stage img{max-width:none;user-select:none;-webkit-user-drag:none;transform-origin:center center;transition:transform .05s linear;}
@@ -779,6 +779,12 @@
         <select id="srcLang" title="Limba din care traducem (folosită și pentru citirea textului / OCR)"></select>
         <label>➡️ Tradu în:</label>
         <select id="tgtLang" title="Limba în care se traduce"></select>
+        <label>👁️ Cititor:</label>
+        <select id="ocrEngine" title="Cum se citește textul din imagine">
+          <option value="browser">📱 În browser (offline)</option>
+          <option value="cloud">☁️ Cloud (mai precis)</option>
+        </select>
+        <input id="ocrKey" type="text" placeholder="Cheie OCR.space (opțional)" autocomplete="off" style="display:none;min-width:170px;">
         <label>🧩 Așezare:</label>
         <select id="ocrPsm" title="Cum e aranjat textul pe pagină">
           <option value="3">Automat</option>
@@ -896,7 +902,7 @@
           <li><b>Ascultă:</b> <b>▶️ Citește</b> o pagină sau <b>📖🔊 Citește toată cartea</b>. La vocabular, 🔊 pronunță cuvântul în limba originală.</li>
           <li><b>Păstrează:</b> <b>💾 Salvează traducerea</b> (fișier de păstrat) sau <b>🖨️ Printează cartea</b>.</li>
         </ol>
-        <p class="help-tips">💡 Sfaturi: fă poze clare, drepte și bine luminate. Pentru text mai greu, folosește <b>✂️ Selectează text</b> ca să lași afară desenele. Prima traducere pe internet pregătește aplicația și pentru offline.</p>
+        <p class="help-tips">💡 <b>Dacă textul nu iese corect:</b> schimbă „👁️ Cititor" pe <b>☁️ Cloud (mai precis)</b> — citește mult mai bine fotografiile. Folosește și <b>✂️ Selectează text</b> ca să lași afară desenele, și fă poze clare, drepte, bine luminate. (Cel mai precis rezultat îl dă modul <b>🤖 Gemini</b>, cu o cheie gratuită.)</p>
         <div class="help-actions">
           <button class="btn-ghost" id="dlIconsBtn" type="button" title="Descarcă iconițe PNG (utile dacă vrei mai târziu s-o publici în magazin)">🎨 Descarcă iconițe PNG</button>
         </div>
@@ -986,6 +992,17 @@ function transToKey(code){ return code ? (TRANS_TO_KEY[String(code).toLowerCase(
   tgt.value = localStorage.getItem("cf_tgt") || "ron";
   src.addEventListener("change", () => localStorage.setItem("cf_src", src.value));
   tgt.addEventListener("change", () => localStorage.setItem("cf_tgt", tgt.value));
+})();
+
+// OCR engine (browser vs cloud) + optional key
+(function initOcrEngine(){
+  const sel = $("ocrEngine"), keyIn = $("ocrKey");
+  sel.value = localStorage.getItem("cf_ocr_engine") || "browser";
+  keyIn.value = localStorage.getItem("cf_ocr_key") || "";
+  const upd = () => { keyIn.style.display = sel.value === "cloud" ? "" : "none"; };
+  upd();
+  sel.addEventListener("change", () => { localStorage.setItem("cf_ocr_engine", sel.value); upd(); });
+  keyIn.addEventListener("change", () => localStorage.setItem("cf_ocr_key", keyIn.value.trim()));
 })();
 
 /* ---------- Toast ---------- */
@@ -1445,8 +1462,8 @@ async function runKeyless() {
   const srcSel = $("srcLang").value, tgtKey = $("tgtLang").value;
   const tgt = LANGS[tgtKey];
   const isAuto = srcSel === "auto";
-  // 1) OCR — for auto, read with a Norwegian+English model (your most used); else the chosen language
-  const raw = await ocrImage(isAuto ? "nor+eng" : LANGS[srcSel].tess);
+  // 1) OCR — via the selected reader (browser or cloud)
+  const raw = await extractText(srcSel, isAuto);
   if (!raw || raw.replace(/\s/g,"").length < 2) {
     throw new Error("Nu am găsit text lizibil în imagine. Încearcă o poză mai clară, dreaptă și bine luminată. 📷");
   }
@@ -1476,9 +1493,9 @@ async function extractOnly() {
   const srcSel = $("srcLang").value, tgtKey = $("tgtLang").value;
   const tgt = LANGS[tgtKey];
   const isAuto = srcSel === "auto";
-  const raw = await ocrImage(isAuto ? "nor+eng" : LANGS[srcSel].tess);
+  const raw = await extractText(srcSel, isAuto);
   if (!raw || raw.replace(/\s/g,"").length < 2) {
-    throw new Error("Nu am găsit text lizibil. Încearcă selectarea zonei cu text (✂️), o poză mai clară sau altă limbă/așezare. 📷");
+    throw new Error("Nu am găsit text lizibil. Încearcă cititorul Cloud (☁️), selectarea zonei cu text (✂️) sau o poză mai clară. 📷");
   }
   const noText = reflowText(raw);
   let srcKey = srcSel;
@@ -1554,6 +1571,69 @@ function adaptiveThreshold(gray, out, w, h){
       out[o] = out[o+1] = out[o+2] = val; out[o+3] = 255;
     }
   }
+}
+
+// Choose the OCR path based on the selected reader
+async function extractText(srcSel, isAuto){
+  if ($("ocrEngine").value === "cloud"){
+    return await ocrCloud(isAuto ? "auto" : srcSel);
+  }
+  return await ocrImage(isAuto ? "nor+eng" : LANGS[srcSel].tess);
+}
+
+// Draw (a crop of) the image to a color JPEG data URL, kept small for upload
+function cropAndDownscale(dataUrl, crop, maxDim, quality){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const sx = crop ? crop.x : 0, sy = crop ? crop.y : 0;
+        const sw = crop ? crop.w : img.width, sh = crop ? crop.h : img.height;
+        if (!sw || !sh) { resolve(null); return; }
+        const long = Math.max(sw, sh);
+        const scale = long > maxDim ? maxDim / long : 1;
+        const cw = Math.round(sw * scale), ch = Math.round(sh * scale);
+        const cv = document.createElement("canvas");
+        cv.width = cw; cv.height = ch;
+        cv.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+        resolve(cv.toDataURL("image/jpeg", quality || 0.7));
+      } catch (_) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+// Cloud OCR via OCR.space (more accurate on photos). Engine 2 auto-detects Latin
+// languages; Cyrillic/Greek use engine 1 with a language code.
+const CLOUD_LATIN = new Set(["nor","dan","swe","isl","eng","deu","nld","fra","spa","ita","por","ron","pol","hun","ces","fin","tur"]);
+const OCRSPACE_LANG = { rus:"rus", ell:"gre", ukr:"rus" };
+async function ocrCloud(srcKeyOrAuto){
+  const page = AP();
+  if (!page || !page.dataUrl) throw new Error("Nicio pagină de citit. Adaugă o imagine 📷");
+  showLoader(true, page.crop ? "Pregătim zona selectată... ✂️" : "Pregătim imaginea... ☁️", 20);
+  const dataUrl = (await cropAndDownscale(page.dataUrl, page.crop, 1600, 0.7)) || page.dataUrl;
+  const isAuto = srcKeyOrAuto === "auto";
+  const latin = isAuto || CLOUD_LATIN.has(srcKeyOrAuto);
+  const form = new FormData();
+  form.append("base64Image", dataUrl);
+  form.append("OCREngine", latin ? "2" : "1");
+  form.append("scale", "true");
+  form.append("detectOrientation", "true");
+  form.append("isTable", "false");
+  if (!latin && OCRSPACE_LANG[srcKeyOrAuto]) form.append("language", OCRSPACE_LANG[srcKeyOrAuto]);
+  const key = ($("ocrKey") && $("ocrKey").value.trim()) || "helloworld";
+  showLoader(true, "Citim textul (cloud)... ☁️", 55);
+  let res;
+  try { res = await fetch("https://api.ocr.space/parse/image", { method:"POST", headers:{ apikey: key }, body: form }); }
+  catch (_) { throw new Error("Nu am putut contacta cititorul cloud — verifică internetul. ☁️"); }
+  let d;
+  try { d = await res.json(); } catch (_) { throw new Error("Răspuns invalid de la cititorul cloud."); }
+  if (d.IsErroredOnProcessing) {
+    const m = Array.isArray(d.ErrorMessage) ? d.ErrorMessage.join(" ") : (d.ErrorMessage || "Eroare necunoscută");
+    throw new Error("Cititor cloud: " + m + " (dacă e prea des folosit, ia o cheie gratuită OCR.space)");
+  }
+  return (d.ParsedResults || []).map(r => (r && r.ParsedText) ? r.ParsedText : "").join("\n").trim();
 }
 
 async function ocrImage(tessOverride) {
