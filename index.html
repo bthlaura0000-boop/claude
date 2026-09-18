@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- OCR în browser, fără cheie API -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
     --pink:#ffd1e3;
@@ -63,12 +65,9 @@
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
   .brand .flag{-webkit-text-fill-color:initial;}
   .tagline{margin:6px 0 0;color:var(--ink-soft);font-weight:600;font-size:clamp(13px,2vw,17px);}
+  .free-badge{display:inline-block;margin-top:10px;background:linear-gradient(135deg,var(--mint-deep),#2fc490);color:#fff;
+    font-family:'Fredoka';font-weight:700;font-size:14px;padding:6px 16px;border-radius:20px;box-shadow:0 5px 0 rgba(47,196,144,.28);}
 
-  /* API + controls bar */
-  .bar{
-    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
-    margin-top:16px;
-  }
   .card{
     background:var(--paper);
     border:3px solid #fff;
@@ -76,14 +75,17 @@
     box-shadow:var(--shadow);
     padding:18px;
   }
-  .apikey-card{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;width:100%;margin-top:16px;}
-  .apikey-card label{font-weight:700;white-space:nowrap;}
-  .apikey-card input{
-    flex:1;min-width:220px;padding:11px 14px;border-radius:14px;border:2px solid var(--lav);
-    font-family:'Quicksand';font-size:15px;background:#fff;color:var(--ink);outline:none;transition:.2s;
+
+  /* Engine / options card */
+  .engine-card{margin-top:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;}
+  .engine-card label{font-weight:700;white-space:nowrap;}
+  .engine-card select,.engine-card input{
+    padding:11px 14px;border-radius:14px;border:2px solid var(--lav);
+    font-family:'Quicksand';font-size:15px;background:#fff;color:var(--ink);outline:none;transition:.2s;font-weight:600;
   }
-  .apikey-card input:focus{border-color:var(--lav-deep);box-shadow:0 0 0 4px rgba(178,141,255,.25);}
-  .apikey-card select{padding:11px 12px;border-radius:14px;border:2px solid var(--sky);font-family:'Quicksand';font-weight:600;background:#fff;color:var(--ink);}
+  .engine-card input{flex:1;min-width:220px;}
+  .engine-card select:focus,.engine-card input:focus{border-color:var(--lav-deep);box-shadow:0 0 0 4px rgba(178,141,255,.25);}
+  #geminiOpts{display:none;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;width:100%;}
   .hint{font-size:12.5px;color:var(--ink-soft);width:100%;text-align:center;margin-top:6px;}
   .hint a{color:var(--lav-deep);font-weight:700;}
 
@@ -170,11 +172,13 @@
   .empty-note{color:var(--ink-soft);font-weight:600;text-align:center;padding:20px;font-style:italic;}
 
   /* Loader */
-  .loader{display:none;text-align:center;padding:24px;}
+  .loader{display:none;text-align:center;padding:24px;margin-top:18px;}
   .loader.show{display:block;}
   .loader .spin{width:54px;height:54px;border:6px solid var(--lav);border-top-color:var(--lav-deep);border-radius:50%;margin:0 auto 12px;animation:spin 1s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .loader p{font-weight:700;color:var(--ink-soft);}
+  .loader p{font-weight:700;color:var(--ink-soft);margin:0;}
+  .progwrap{max-width:360px;margin:12px auto 0;height:14px;background:var(--lav);border-radius:20px;overflow:hidden;}
+  .progbar{height:100%;width:0;background:linear-gradient(90deg,var(--mint-deep),var(--sky-deep));transition:width .3s;border-radius:20px;}
 
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:16px;font-weight:600;box-shadow:var(--shadow);z-index:9999;transition:transform .35s;max-width:90vw;text-align:center;}
   .toast.show{transform:translateX(-50%) translateY(0);}
@@ -188,7 +192,7 @@
   /* Print */
   @media print{
     body{background:#fff;}
-    .no-print,header.hero .bar,.dropzone,.viewer-toolbar,.tabs,.audio-bar,.bar,.apikey-card,footer{display:none !important;}
+    .no-print,.dropzone,.viewer-toolbar,.tabs,.audio-bar,.engine-card,footer{display:none !important;}
     .card{box-shadow:none;border:1px solid #ddd;}
     .story{border-color:#ccc;box-shadow:none;}
     .layout{display:block;}
@@ -207,17 +211,24 @@
     <span class="blob" style="right:10%;bottom:8%;animation-delay:1.5s;">🧚</span>
     <h1 class="brand">🧚 Cartea Fermecată <span class="flag">🇳🇴→🇷🇴</span></h1>
     <p class="tagline">Fotografiază o pagină de carte în norvegiană și o transformăm într-o poveste caldă în română!</p>
+    <div class="free-badge">✅ Funcționează 100% GRATUIT — fără cheie API!</div>
 
-    <div class="apikey-card card">
-      <label for="apiKey">🔑 Cheie API Gemini:</label>
-      <input type="password" id="apiKey" placeholder="Lipește aici cheia ta API (rămâne doar în browserul tău)" autocomplete="off">
-      <select id="modelSel" title="Alege modelul Gemini">
-        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+    <div class="engine-card card">
+      <label for="engineSel">🌐 Motor de traducere:</label>
+      <select id="engineSel">
+        <option value="auto">✨ Automat — GRATUIT, fără cheie (OCR + traducere)</option>
+        <option value="gemini">🤖 Gemini — mai poetic (necesită cheie, opțional)</option>
       </select>
-      <button class="btn-ghost" id="saveKey" type="button">💾 Salvează</button>
-      <div class="hint">Nu ai o cheie? Ia una gratuit de la <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Sau apasă <b>Demo</b> ca să testezi fără cheie. Cheia este stocată doar local (localStorage).</div>
+      <div id="geminiOpts">
+        <input type="password" id="apiKey" placeholder="Cheie API Gemini (opțională)" autocomplete="off">
+        <select id="modelSel" title="Alege modelul Gemini">
+          <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+        </select>
+        <button class="btn-ghost" id="saveKey" type="button">💾 Salvează</button>
+      </div>
+      <div class="hint" id="engineHint">Modul <b>Automat</b> citește textul direct în browser (OCR) și îl traduce prin servicii gratuite — nu ai nevoie de nicio cheie. Apasă <b>Demo</b> pentru un exemplu instant.</div>
     </div>
   </header>
 
@@ -265,7 +276,8 @@
   <!-- Loader -->
   <div class="loader card" id="loader">
     <div class="spin"></div>
-    <p id="loaderMsg">Citim povestea... ✨ (OCR + traducere magică în curs)</p>
+    <p id="loaderMsg">Citim povestea... ✨</p>
+    <div class="progwrap"><div class="progbar" id="progbar"></div></div>
   </div>
 
   <!-- Results -->
@@ -326,7 +338,7 @@
 
   <footer>
     Făcut cu <span class="heart">♥</span> pentru micii cititori curioși &middot; Cartea Fermecată &middot;
-    <span class="badge">1 fișier HTML · fără framework-uri</span>
+    <span class="badge">1 fișier HTML · fără cheie API</span>
   </footer>
 </div>
 
@@ -335,7 +347,11 @@
 <script>
 /* =========================================================
    Cartea Fermecată — traducător NO→RO pentru cărți de copii
-   Un singur fișier, fără dependențe (doar Google Fonts + Gemini API)
+   Funcționează FĂRĂ cheie API:
+     • OCR în browser cu Tesseract.js (limba norvegiană)
+     • Traducere prin servicii gratuite fără cheie (Google gtx + MyMemory)
+     • Glosar de folclor + dicționar NO→RO încorporate (offline)
+   Gemini rămâne opțional (traducere mai poetică) dacă introduci o cheie.
    ========================================================= */
 "use strict";
 
@@ -343,11 +359,12 @@ const $ = (id) => document.getElementById(id);
 
 /* ---------- State ---------- */
 const state = {
-  imageDataUrl: null,   // data URL of loaded image
+  imageDataUrl: null,
   imageMime: null,
-  result: null,         // {no, ro, terms:[{term,explain}], vocab:[{no,ro}]}
+  result: null,        // {no, ro, terms:[{term,explain}], vocab:[{no,ro}]}
   mode: "ro",
   zoom: 1, panX: 0, panY: 0,
+  busy: false,
 };
 
 /* ---------- Toast ---------- */
@@ -357,16 +374,30 @@ function toast(msg, type="") {
   t.textContent = msg;
   t.className = "toast show " + type;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.className = "toast " + type), 3800);
+  toastTimer = setTimeout(() => (t.className = "toast " + type), 4200);
 }
 
-/* ---------- API key persistence ---------- */
-(function initKey(){
-  const saved = localStorage.getItem("gemini_api_key");
-  if (saved) $("apiKey").value = saved;
+/* ---------- Engine selection & key persistence ---------- */
+(function initEngine(){
+  const savedKey = localStorage.getItem("gemini_api_key");
+  if (savedKey) $("apiKey").value = savedKey;
   const savedModel = localStorage.getItem("gemini_model");
   if (savedModel) $("modelSel").value = savedModel;
+  const savedEngine = localStorage.getItem("cf_engine") || "auto";
+  $("engineSel").value = savedEngine;
+  updateEngineUI();
 })();
+function updateEngineUI(){
+  const eng = $("engineSel").value;
+  $("geminiOpts").style.display = eng === "gemini" ? "flex" : "none";
+  $("engineHint").innerHTML = eng === "gemini"
+    ? 'Modul <b>Gemini</b> oferă o traducere mai poetică, dar are nevoie de o cheie gratuită de la <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Cheia rămâne doar în browserul tău.'
+    : 'Modul <b>Automat</b> citește textul direct în browser (OCR) și îl traduce prin servicii gratuite — nu ai nevoie de nicio cheie. Apasă <b>Demo</b> pentru un exemplu instant.';
+}
+$("engineSel").addEventListener("change", () => {
+  localStorage.setItem("cf_engine", $("engineSel").value);
+  updateEngineUI();
+});
 $("saveKey").addEventListener("click", () => {
   const k = $("apiKey").value.trim();
   localStorage.setItem("gemini_api_key", k);
@@ -377,7 +408,81 @@ $("modelSel").addEventListener("change", () =>
   localStorage.setItem("gemini_model", $("modelSel").value));
 
 /* =========================================================
-   IMAGE LOADING (file / camera / drag&drop)
+   LOCAL KNOWLEDGE — folclor norvegian + mic dicționar
+   (folosite în modul Automat, complet offline)
+   ========================================================= */
+const FOLKLORE = [
+  { keys:["troll","troller","trollet"], term:"Troll", explain:"Un uriaș din poveștile norvegiene, care trăiește în munți, peșteri sau sub poduri. E mare și cam urâcios, dar deseori prostuț — copiii isteți îl păcălesc mereu!" },
+  { keys:["nisse","nissen","fjøsnisse"], term:"Nisse", explain:"Un spiriduș mic și bărbos care are grijă de gospodărie și de animale. Dacă îi lași un castron de terci, te ajută; dacă îl superi, îți face mici pozne." },
+  { keys:["tomte","tomten"], term:"Tomte", explain:"Vărul suedez al lui Nisse — un spiriduș prietenos, păzitor al casei și al fermei, mai ales de Crăciun." },
+  { keys:["julenisse","julenissen"], term:"Julenisse", explain:"Moș Crăciunul norvegian! Un nisse vesel care aduce daruri copiilor cuminți în noaptea de Crăciun." },
+  { keys:["fjord","fjorden","fjorder"], term:"Fjord", explain:"Un braț lung și adânc de mare care intră printre munți. În Norvegia sunt sute, cu ape liniștite și maluri înalte, foarte frumoase." },
+  { keys:["foss","fossen","fossefall"], term:"Foss (cascadă)", explain:"O cascadă — apa care se prăvălește zgomotos de pe o stâncă înaltă. Norvegia e plină de ele, printre munți." },
+  { keys:["fjell","fjellet"], term:"Fjell (munte)", explain:"Munte sau podiș înalt. În poveștile norvegiene, mulți eroi și troli locuiesc sus, în fjell." },
+  { keys:["hulder","huldra"], term:"Hulder", explain:"O făptură din pădure care arată ca o fată frumoasă, dar are o coadă de vacă ascunsă. Cântă minunat și îi ademenește pe cei neatenți." },
+  { keys:["nøkken","nokken","nøkk"], term:"Nøkken", explain:"Un duh al apelor care trăiește în lacuri și râuri. Cântă la vioară ca să-i atragă pe oameni — de aceea copiii sunt învățați să fie prudenți lângă apă." },
+  { keys:["draug","draugen"], term:"Draug", explain:"O fantomă a mării din poveștile pescarilor, care apare în furtuni. Un personaj fioros, dar numai în legende!" },
+  { keys:["seter","seters","setra"], term:"Seter", explain:"O pășune de vară, sus în munți, unde erau duse vacile și caprele să pască iarbă proaspătă — un fel de tabără de vară pentru animale." },
+  { keys:["sankthans","jonsok"], term:"Sankthans", explain:"Sărbătoarea nopții de vară (24 iunie), când norvegienii aprind focuri mari pe malul apei și petrec până târziu, în cea mai luminoasă noapte a anului." },
+  { keys:["lefse"], term:"Lefse", explain:"O lipie moale și subțire din cartofi, tradițională în Norvegia, unsă cu unt și zahăr — o gustare dulce îndrăgită de copii." },
+  { keys:["koselig","kos"], term:"Koselig", explain:"Un cuvânt drag norvegienilor: senzația caldă și plăcută de a fi confortabil, în siguranță și fericit — ca atunci când stai la povești sub o pătură." },
+];
+
+// Mic dicționar de cuvinte frecvente în cărțile pentru copii
+const NO_RO_DICT = {
+  "og":"și","er":"este","var":"era","det":"acesta/aceea","den":"acela/aceea","en":"un/o","ei":"o","et":"un",
+  "på":"pe","i":"în","til":"la/către","fra":"de la","med":"cu","av":"de/al","for":"pentru","om":"despre",
+  "som":"care","han":"el","hun":"ea","de":"ei/ele","vi":"noi","du":"tu","jeg":"eu","meg":"pe mine","deg":"pe tine",
+  "ikke":"nu","ja":"da","nei":"nu","her":"aici","der":"acolo","nå":"acum","da":"atunci","så":"așa/apoi",
+  "stor":"mare","liten":"mic","god":"bun","fin":"frumos","vakker":"frumoasă","glad":"vesel","redd":"speriat",
+  "barn":"copil","gutt":"băiat","jente":"fată","mor":"mamă","far":"tată","mamma":"mămica","pappa":"tăticul",
+  "hus":"casă","hjem":"acasă","skog":"pădure","tre":"copac/trei","blomst":"floare","sol":"soare","måne":"lună",
+  "stjerne":"stea","himmel":"cer","hav":"mare","vann":"apă","snø":"zăpadă","regn":"ploaie","vind":"vânt",
+  "dyr":"animal","hund":"câine","katt":"pisică","fugl":"pasăre","hest":"cal","ku":"vacă","sau":"oaie",
+  "bukk":"țap/ied","gris":"porc","rev":"vulpe","bjørn":"urs","ulv":"lup","hare":"iepure","mus":"șoarece",
+  "konge":"rege","dronning":"regină","prins":"prinț","prinsesse":"prințesă","slott":"castel","heks":"vrăjitoare",
+  "eventyr":"poveste","bok":"carte","natt":"noapte","dag":"zi","morgen":"dimineață","kveld":"seară",
+  "venn":"prieten","kjærlighet":"iubire","hjerte":"inimă","hånd":"mână","øye":"ochi","øyne":"ochi",
+  "hode":"cap","nese":"nas","munn":"gură","hår":"păr","fot":"picior","stemme":"voce","ord":"cuvânt",
+  "gå":"a merge","løpe":"a alerga","se":"a vedea","høre":"a auzi","spise":"a mânca","sove":"a dormi",
+  "leke":"a se juca","synge":"a cânta","danse":"a dansa","hoppe":"a sări","fly":"a zbura","svømme":"a înota",
+  "bro":"pod","broa":"podul","vei":"drum","dør":"ușă","vindu":"fereastră","seng":"pat","bord":"masă",
+  "eple":"măr","brød":"pâine","melk":"lapte","ost":"brânză","kake":"prăjitură","is":"înghețată/gheață",
+  "rød":"roșu","blå":"albastru","grønn":"verde","gul":"galben","hvit":"alb","svart":"negru","rosa":"roz",
+  "en gang":"odată","kom":"a venit","sa":"a spus","ville":"voia","kunne":"putea","måtte":"trebuia",
+};
+
+function normWord(w){ return w.toLowerCase().replace(/[^a-zæøåäöéà]/gi,""); }
+
+function detectFolklore(text){
+  const low = " " + text.toLowerCase() + " ";
+  const found = [];
+  const seen = new Set();
+  for (const f of FOLKLORE){
+    if (f.keys.some(k => new RegExp("\\b"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i").test(low))){
+      if (!seen.has(f.term)){ seen.add(f.term); found.push({term:f.term, explain:f.explain}); }
+    }
+  }
+  return found;
+}
+
+function extractVocab(text){
+  const words = text.split(/\s+/).map(normWord).filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  for (const w of words){
+    if (seen.has(w)) continue;
+    if (NO_RO_DICT[w]){
+      seen.add(w);
+      out.push({ no:w, ro:NO_RO_DICT[w] });
+    }
+    if (out.length >= 14) break;
+  }
+  return out;
+}
+
+/* =========================================================
+   IMAGE LOADING (file / camera / drag&drop / paste)
    ========================================================= */
 const dropzone = $("dropzone");
 const stage = $("stage");
@@ -410,7 +515,6 @@ $("camBtn").addEventListener("click", () => $("camInput").click());
 $("fileInput").addEventListener("change", (e) => handleFile(e.target.files[0]));
 $("camInput").addEventListener("change", (e) => handleFile(e.target.files[0]));
 dropzone.addEventListener("click", (e) => {
-  // avoid double-trigger when clicking the inner buttons
   if (e.target.closest("button")) return;
   $("fileInput").click();
 });
@@ -423,7 +527,6 @@ dropzone.addEventListener("drop", (e) => {
   const f = e.dataTransfer.files[0];
   if (f) handleFile(f);
 });
-// Allow paste from clipboard
 window.addEventListener("paste", (e) => {
   const item = [...(e.clipboardData?.items||[])].find(i => i.type.startsWith("image/"));
   if (item) handleFile(item.getAsFile());
@@ -464,7 +567,6 @@ window.addEventListener("mousemove", (e) => {
   applyTransform();
 });
 window.addEventListener("mouseup", () => { panning=false; stage.classList.remove("dragging"); });
-// touch pan
 stage.addEventListener("touchstart", (e) => {
   if (!state.imageDataUrl || e.touches.length!==1) return;
   panning=true; startX=e.touches[0].clientX-state.panX; startY=e.touches[0].clientY-state.panY;
@@ -476,88 +578,197 @@ stage.addEventListener("touchmove", (e) => {
 stage.addEventListener("touchend", () => panning=false);
 
 /* =========================================================
-   GEMINI API — OCR + translation
+   LOADER helpers
    ========================================================= */
-const PROMPT = `Ești un traducător fermecat de cărți pentru copii. Primești imaginea unei pagini dintr-o carte pentru copii scrisă în limba NORVEGIANĂ.
+function showLoader(show, msg, progress) {
+  $("loader").classList.toggle("show", show);
+  if (msg != null) $("loaderMsg").textContent = msg;
+  if (progress != null) $("progbar").style.width = Math.max(0,Math.min(100,progress)) + "%";
+  state.busy = show;
+  $("translateBtn").disabled = show || !state.imageDataUrl;
+}
+
+/* =========================================================
+   MAIN TRANSLATE — dispatch by engine
+   ========================================================= */
+$("translateBtn").addEventListener("click", async () => {
+  if (state.busy) return;
+  if (!state.imageDataUrl) { toast("Încarcă mai întâi o imagine 🖼️", "err"); return; }
+  const eng = $("engineSel").value;
+  try {
+    if (eng === "gemini" && $("apiKey").value.trim()) {
+      await runGemini();
+    } else {
+      if (eng === "gemini") toast("Nicio cheie Gemini — folosesc modul gratuit Automat ✨", "");
+      await runKeyless();
+    }
+  } catch (err) {
+    console.error(err);
+    toast(err.message || "Ceva n-a mers. Încearcă din nou.", "err");
+  } finally {
+    showLoader(false);
+  }
+});
+
+/* =========================================================
+   KEYLESS ENGINE — OCR (Tesseract.js) + free translation
+   ========================================================= */
+async function runKeyless() {
+  // 1) OCR
+  const noText = await ocrImage();
+  if (!noText || noText.replace(/\s/g,"").length < 2) {
+    throw new Error("Nu am găsit text lizibil în imagine. Încearcă o poză mai clară sau mai luminoasă. 📷");
+  }
+  // 2) local knowledge (offline)
+  const terms = detectFolklore(noText);
+  const vocab = extractVocab(noText);
+  // 3) translation (free, no key)
+  const roText = await translateNoToRo(noText);
+  applyResult({ no: noText, ro: roText, terms, vocab });
+  toast("Gata! Povestea a fost tradusă gratuit 🎉", "ok");
+}
+
+async function ocrImage() {
+  if (typeof Tesseract === "undefined") {
+    throw new Error("Motorul OCR nu s-a încărcat (verifică internetul). Poți folosi Mod Demo între timp. 🔌");
+  }
+  showLoader(true, "Pornim cititorul magic de litere... 🔍", 3);
+  const worker = await Tesseract.createWorker("nor", 1, {
+    logger: (m) => {
+      if (m.status === "recognizing text") {
+        showLoader(true, `Recunoaștem textul norvegian... ${Math.round(m.progress*100)}% 🔤`, 5 + m.progress*45);
+      } else if (m.status && m.status.includes("loading")) {
+        showLoader(true, "Pregătim dicționarul norvegian... 📥", 3);
+      }
+    }
+  });
+  try {
+    const { data: { text } } = await worker.recognize(state.imageDataUrl);
+    return cleanupOcr(text);
+  } finally {
+    await worker.terminate();
+  }
+}
+
+function cleanupOcr(text){
+  return text
+    .replace(/[ \t]+\n/g,"\n")     // trailing spaces
+    .replace(/\n{3,}/g,"\n\n")     // collapse blank lines
+    .replace(/[ \t]{2,}/g," ")     // collapse spaces
+    .trim();
+}
+
+/* ---- Free translation with fallback chain ---- */
+async function translateNoToRo(text) {
+  const lines = text.split("\n");
+  const nonEmpty = lines.filter(l => l.trim()).length || 1;
+  const out = [];
+  let done = 0;
+  for (const line of lines) {
+    if (!line.trim()) { out.push(""); continue; }
+    done++;
+    showLoader(true, `Traducem povestea în română... ${done}/${nonEmpty} 🪄`, 50 + (done/nonEmpty)*48);
+    const chunks = chunkText(line, 480);
+    const translated = [];
+    for (const c of chunks) translated.push(await translateChunk(c));
+    out.push(translated.join(" "));
+  }
+  showLoader(true, "Aproape gata... ✨", 99);
+  return out.join("\n");
+}
+
+// split a long line into <= maxLen pieces at sentence/space boundaries
+function chunkText(line, maxLen) {
+  if (line.length <= maxLen) return [line];
+  const parts = [];
+  let rest = line;
+  while (rest.length > maxLen) {
+    let cut = rest.lastIndexOf(". ", maxLen);
+    if (cut < maxLen*0.5) cut = rest.lastIndexOf(" ", maxLen);
+    if (cut < 1) cut = maxLen;
+    parts.push(rest.slice(0, cut+1).trim());
+    rest = rest.slice(cut+1);
+  }
+  if (rest.trim()) parts.push(rest.trim());
+  return parts;
+}
+
+async function translateChunk(text) {
+  // Try services in order; if all fail, return original so the story still shows.
+  try { return await tGoogle(text); } catch (_) {}
+  try { return await tMyMemory(text); } catch (_) {}
+  return text;
+}
+
+async function tGoogle(text) {
+  const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=no&tl=ro&dt=t&q=" + encodeURIComponent(text);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("google");
+  const d = await r.json();
+  if (!Array.isArray(d) || !Array.isArray(d[0])) throw new Error("google-shape");
+  return d[0].map(seg => (seg && seg[0]) ? seg[0] : "").join("");
+}
+
+async function tMyMemory(text) {
+  const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) + "&langpair=no|ro";
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("mymemory");
+  const d = await r.json();
+  const tr = d?.responseData?.translatedText;
+  if (!tr) throw new Error("mymemory-empty");
+  return tr;
+}
+
+/* =========================================================
+   OPTIONAL GEMINI ENGINE (more poetic) — needs a key
+   ========================================================= */
+const GEMINI_PROMPT = `Ești un traducător fermecat de cărți pentru copii. Primești imaginea unei pagini dintr-o carte pentru copii scrisă în limba NORVEGIANĂ.
 
 Sarcinile tale:
 1. Extrage (OCR) tot textul norvegian de pe pagină, exact cum apare, păstrând rândurile/paragrafele.
-2. Tradu textul în limba ROMÂNĂ folosind un limbaj cald, expresiv, poetic și potrivit pentru copii mici. Păstrează ritmul, rima (dacă există) și atmosfera de poveste a originalului. Nu traduce cuvânt cu cuvânt — recreează magia poveștii.
-3. Identifică termeni culturali sau din folclorul norvegian (ex: troll, nisse, fjord, hulder, tomte, Sankthans etc.) și explică-i pe înțelesul copiilor, în 1-2 propoziții calde.
-4. Extrage 6-14 cuvinte-cheie utile din text și oferă un mic dicționar norvegiană → română.
+2. Tradu textul în limba ROMÂNĂ folosind un limbaj cald, expresiv, poetic și potrivit pentru copii mici. Păstrează ritmul, rima (dacă există) și atmosfera de poveste. Recreează magia, nu traduce cuvânt cu cuvânt.
+3. Identifică termeni culturali sau din folclorul norvegian (troll, nisse, fjord, hulder, tomte, Sankthans etc.) și explică-i pe înțelesul copiilor, în 1-2 propoziții calde.
+4. Extrage 6-14 cuvinte-cheie utile și oferă un mic dicționar norvegiană → română.
 
-Răspunde DOAR cu un obiect JSON valid, fără text în plus, fără markdown, în această structură exactă:
-{
-  "norwegian_text": "textul original norvegian extras",
-  "romanian_translation": "povestea tradusă frumos în română",
-  "cultural_terms": [{"term":"...", "explanation":"..."}],
-  "vocabulary": [{"norwegian":"...", "romanian":"..."}]
-}
-Dacă imaginea nu conține text norvegian lizibil, întoarce câmpurile cu șiruri goale și liste goale.`;
+Răspunde DOAR cu un obiect JSON valid, fără markdown, în structura exactă:
+{"norwegian_text":"...","romanian_translation":"...","cultural_terms":[{"term":"...","explanation":"..."}],"vocabulary":[{"norwegian":"...","romanian":"..."}]}
+Dacă imaginea nu conține text norvegian lizibil, întoarce câmpuri goale.`;
 
-async function callGemini() {
+async function runGemini() {
   const key = $("apiKey").value.trim();
-  if (!key) { toast("Adaugă întâi cheia API Gemini 🔑 (sau folosește Mod Demo)", "err"); return; }
-  if (!state.imageDataUrl) { toast("Încarcă mai întâi o imagine 🖼️", "err"); return; }
-
   const model = $("modelSel").value;
   const base64 = state.imageDataUrl.split(",")[1];
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const body = {
-    contents: [{
-      parts: [
-        { text: PROMPT },
-        { inline_data: { mime_type: state.imageMime, data: base64 } }
-      ]
-    }],
+    contents: [{ parts: [ { text: GEMINI_PROMPT }, { inline_data: { mime_type: state.imageMime, data: base64 } } ] }],
     generationConfig: { temperature: 0.7, responseMimeType: "application/json" }
   };
-
-  showLoader(true, "Citim povestea... ✨ (OCR + traducere magică în curs)");
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      let detail = "";
-      try { detail = (await res.json())?.error?.message || ""; } catch(_) {}
-      throw new Error(`Eroare API (${res.status}). ${detail}`);
-    }
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join("") || "";
-    const parsed = parseJson(text);
-    if (!parsed) throw new Error("Răspunsul nu a putut fi interpretat. Încearcă din nou.");
-    applyResult(parsed);
-    toast("Gata! Povestea a fost tradusă 🎉", "ok");
-  } catch (err) {
-    console.error(err);
-    toast(err.message || "Ceva n-a mers. Verifică cheia și conexiunea.", "err");
-  } finally {
-    showLoader(false);
+  showLoader(true, "Gemini citește și traduce poetic... ✨", 40);
+  const res = await fetch(url, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+  if (!res.ok) {
+    let detail=""; try{ detail=(await res.json())?.error?.message||""; }catch(_){}
+    throw new Error(`Eroare API Gemini (${res.status}). ${detail}`);
   }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join("") || "";
+  const parsed = parseGeminiJson(text);
+  if (!parsed) throw new Error("Răspunsul Gemini nu a putut fi interpretat.");
+  applyResult(parsed);
+  toast("Gata! Traducere poetică Gemini 🎉", "ok");
 }
-
-function parseJson(text) {
+function parseGeminiJson(text) {
   if (!text) return null;
-  // Try direct
-  try { return normalize(JSON.parse(text)); } catch(_) {}
-  // Strip code fences / extract first {...}
+  try { return normalizeResult(JSON.parse(text)); } catch(_) {}
   const m = text.match(/\{[\s\S]*\}/);
-  if (m) { try { return normalize(JSON.parse(m[0])); } catch(_) {} }
+  if (m) { try { return normalizeResult(JSON.parse(m[0])); } catch(_) {} }
   return null;
 }
-function normalize(obj) {
+function normalizeResult(obj) {
   return {
     no: obj.norwegian_text || obj.norwegian || "",
     ro: obj.romanian_translation || obj.romanian || "",
-    terms: (obj.cultural_terms || []).map(t => ({
-      term: t.term || t.word || "", explain: t.explanation || t.explain || ""
-    })).filter(t=>t.term),
-    vocab: (obj.vocabulary || []).map(v => ({
-      no: v.norwegian || v.no || "", ro: v.romanian || v.ro || ""
-    })).filter(v=>v.no),
+    terms: (obj.cultural_terms || []).map(t => ({ term:t.term||t.word||"", explain:t.explanation||t.explain||"" })).filter(t=>t.term),
+    vocab: (obj.vocabulary || []).map(v => ({ no:v.norwegian||v.no||"", ro:v.romanian||v.ro||"" })).filter(v=>v.no),
   };
 }
 
@@ -571,10 +782,9 @@ function applyResult(r) {
   $("storyNo").textContent = r.no || "(fără text norvegian)";
   $("parNo").textContent = r.no || "(fără text norvegian)";
 
-  // terms
   const tb = $("termsBox");
   tb.innerHTML = "";
-  if (r.terms.length) {
+  if (r.terms && r.terms.length) {
     r.terms.forEach(t => {
       const d = document.createElement("div");
       d.className = "term";
@@ -584,14 +794,12 @@ function applyResult(r) {
     $("termsSection").style.display = "block";
   } else $("termsSection").style.display = "none";
 
-  // vocab
   const vb = $("vocabBody");
   vb.innerHTML = "";
-  if (r.vocab.length) {
+  if (r.vocab && r.vocab.length) {
     r.vocab.forEach(v => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="play" title="Ascultă românește">🔊</td>
-        <td>${esc(v.no)}</td><td>${esc(v.ro)}</td>`;
+      tr.innerHTML = `<td class="play" title="Ascultă românește">🔊</td><td>${esc(v.no)}</td><td>${esc(v.ro)}</td>`;
       tr.querySelector(".play").addEventListener("click", () => speakOnce(v.ro));
       vb.appendChild(tr);
     });
@@ -604,7 +812,6 @@ function applyResult(r) {
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-/* View mode switching */
 function setMode(mode) {
   state.mode = mode;
   document.querySelectorAll(".mode-btn").forEach(b =>
@@ -616,34 +823,24 @@ function setMode(mode) {
 document.querySelectorAll(".mode-btn").forEach(b =>
   b.addEventListener("click", () => setMode(b.dataset.mode)));
 
-/* Loader */
-function showLoader(show, msg) {
-  $("loader").classList.toggle("show", show);
-  if (msg) $("loaderMsg").textContent = msg;
-  $("translateBtn").disabled = show || !state.imageDataUrl;
-}
-
 /* =========================================================
-   TEXT-TO-SPEECH (Romanian)
+   TEXT-TO-SPEECH (Romanian) — Web Speech API, no key
    ========================================================= */
 const synth = window.speechSynthesis;
 let roVoice = null;
 function pickVoice() {
+  if (!synth) return;
   const voices = synth.getVoices();
   roVoice = voices.find(v => /ro(-|_)?/i.test(v.lang)) ||
             voices.find(v => /rom[aâ]n/i.test(v.name)) || null;
 }
-if (synth) {
-  pickVoice();
-  synth.onvoiceschanged = pickVoice;
-}
+if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
 
 function currentSpeakText() {
   if (!state.result) return "";
   if (state.mode === "no") return state.result.no;
-  return state.result.ro; // ro + parallel read the Romanian story
+  return state.result.ro;
 }
-
 function speak() {
   if (!synth) { toast("Browserul tău nu suportă citirea vocală 😔", "err"); return; }
   if (synth.paused) { synth.resume(); setAudioState("playing"); return; }
@@ -675,12 +872,12 @@ function setAudioState(s) {
   $("stopBtn").disabled = s === "stopped";
 }
 $("playBtn").addEventListener("click", speak);
-$("pauseBtn").addEventListener("click", () => { if (synth.speaking){ synth.pause(); setAudioState("paused"); }});
-$("stopBtn").addEventListener("click", () => { synth.cancel(); setAudioState("stopped"); });
+$("pauseBtn").addEventListener("click", () => { if (synth && synth.speaking){ synth.pause(); setAudioState("paused"); }});
+$("stopBtn").addEventListener("click", () => { if (synth) synth.cancel(); setAudioState("stopped"); });
 $("rate").addEventListener("input", () => $("rateLabel").textContent = parseFloat($("rate").value).toFixed(2) + "×");
 
 /* =========================================================
-   DEMO MODE — preloaded page (no API key needed)
+   DEMO MODE — preloaded page (instant, no key, no network)
    ========================================================= */
 const DEMO = {
   no: `Det var en gang tre bukkene Bruse
@@ -706,31 +903,20 @@ cu ochii mari cât niște talere de cositor
 „Acum vin și te înfulec!" mârâi trollul.
 „Vai, nu pe mine! Sunt atât de micuț," se rugă iedul.`,
   terms: [
-    { term: "Troll", explain: "În poveștile norvegiene, trolii sunt uriași uituci și cam năzdrăvani care trăiesc în munți sau sub poduri. Sunt mari și urâcioși, dar copiii isteți îi pot păcăli mereu!" },
-    { term: "Seter (pășunea din munți)", explain: "Este o pajiște înaltă în munți unde, vara, animalele erau duse să pască iarbă proaspătă și să se îngrașe — un fel de tabără de vară pentru capre și vaci." },
-    { term: "Foss (cascadă)", explain: "O cascadă — apa care se prăvălește zgomotos de pe o stâncă. În Norvegia sunt foarte multe, printre munți și fiorduri." }
+    { term:"Troll", explain:"În poveștile norvegiene, trolii sunt uriași uituci și cam năzdrăvani care trăiesc în munți sau sub poduri. Sunt mari și urâcioși, dar copiii isteți îi pot păcăli mereu!" },
+    { term:"Seter (pășunea din munți)", explain:"O pajiște înaltă în munți unde, vara, animalele erau duse să pască iarbă proaspătă și să se îngrașe — un fel de tabără de vară pentru capre și vaci." },
+    { term:"Foss (cascadă)", explain:"O cascadă — apa care se prăvălește zgomotos de pe o stâncă. În Norvegia sunt foarte multe, printre munți și fiorduri." }
   ],
   vocab: [
-    { no: "bukk", ro: "ied / țap" },
-    { no: "bru", ro: "pod" },
-    { no: "troll", ro: "troll (uriaș din folclor)" },
-    { no: "foss", ro: "cascadă" },
-    { no: "øyne", ro: "ochi" },
-    { no: "nese", ro: "nas" },
-    { no: "liten", ro: "mic" },
-    { no: "stemme", ro: "voce" },
-    { no: "broa", ro: "podul" },
-    { no: "seter", ro: "pășune de munte" }
+    { no:"bukk", ro:"ied / țap" }, { no:"bru", ro:"pod" }, { no:"troll", ro:"troll (uriaș din folclor)" },
+    { no:"foss", ro:"cascadă" }, { no:"øyne", ro:"ochi" }, { no:"nese", ro:"nas" },
+    { no:"liten", ro:"mic" }, { no:"stemme", ro:"voce" }, { no:"broa", ro:"podul" }, { no:"seter", ro:"pășune de munte" }
   ]
 };
-// A tiny inline SVG "book page" illustration so the demo also shows an image.
 const DEMO_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(`
 <svg xmlns='http://www.w3.org/2000/svg' width='640' height='820' viewBox='0 0 640 820'>
-  <defs>
-    <linearGradient id='sky' x1='0' y1='0' x2='0' y2='1'>
-      <stop offset='0' stop-color='#cfe8ff'/><stop offset='1' stop-color='#eafff4'/>
-    </linearGradient>
-  </defs>
+  <defs><linearGradient id='sky' x1='0' y1='0' x2='0' y2='1'>
+    <stop offset='0' stop-color='#cfe8ff'/><stop offset='1' stop-color='#eafff4'/></linearGradient></defs>
   <rect width='640' height='820' fill='#fffdf6'/>
   <rect x='24' y='24' width='592' height='772' rx='24' fill='#fff' stroke='#ffcf4d' stroke-width='4'/>
   <rect x='56' y='56' width='528' height='300' rx='18' fill='url(#sky)'/>
@@ -749,21 +935,20 @@ const DEMO_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(`
 
 $("demoBtn").addEventListener("click", () => {
   setImage(DEMO_IMG, "image/svg+xml");
-  showLoader(true, "Pregătim povestea demo... ✨");
+  showLoader(true, "Pregătim povestea demo... ✨", 60);
   setTimeout(() => {
     showLoader(false);
     applyResult(JSON.parse(JSON.stringify(DEMO)));
-    toast("Mod Demo activat — nu ai nevoie de cheie API! ✨", "ok");
-  }, 700);
+    toast("Mod Demo activat — fără cheie, fără internet! ✨", "ok");
+  }, 600);
 });
 
 /* =========================================================
-   BUTTONS: translate / clear / print
+   Buttons: print / clear
    ========================================================= */
-$("translateBtn").addEventListener("click", callGemini);
 $("printBtn").addEventListener("click", () => window.print());
 $("clearBtn").addEventListener("click", () => {
-  synth && synth.cancel();
+  if (synth) synth.cancel();
   state.imageDataUrl = null; state.result = null;
   previewImg.src = ""; previewImg.style.display = "none";
   stagePlaceholder.style.display = "block";
@@ -774,7 +959,6 @@ $("clearBtn").addEventListener("click", () => {
   toast("Am șters tot. Poți începe o poveste nouă! 🧹", "ok");
 });
 
-// keyboard: Enter on api key -> save
 $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey").click(); });
 </script>
 </body>
