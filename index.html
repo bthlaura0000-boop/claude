@@ -877,7 +877,7 @@
     <div id="vocabSection" style="display:none;">
       <div class="section-title" id="vocabTitle">📖 Mic dicționar (Norvegiană → Română)</div>
       <table class="vocab">
-        <thead><tr><th>🔊</th><th id="vocThSrc">🇳🇴 Norvegiană</th><th id="vocThTgt">🇷🇴 Română</th></tr></thead>
+        <thead><tr><th id="vocThSrc">🇳🇴 Norvegiană</th><th id="vocThTgt">🇷🇴 Română</th></tr></thead>
         <tbody id="vocabBody"></tbody>
       </table>
     </div>
@@ -1854,8 +1854,7 @@ function renderResult(r) {
   if (r.vocab && r.vocab.length) {
     r.vocab.forEach(v => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="play" title="Ascultă cuvântul în ${srcL.name} ${srcL.flag}">🔊</td><td>${esc(v.no)}</td><td>${esc(v.ro)}</td>`;
-      tr.querySelector(".play").addEventListener("click", () => speakWord(v.no, r.src || $("srcLang").value));
+      tr.innerHTML = `<td>${esc(v.no)}</td><td>${esc(v.ro)}</td>`;
       vb.appendChild(tr);
     });
     $("vocabSection").style.display = "block";
@@ -1890,38 +1889,7 @@ function setMode(mode) {
 document.querySelectorAll(".mode-btn").forEach(b =>
   b.addEventListener("click", () => setMode(b.dataset.mode)));
 
-/* =========================================================
-   TEXT-TO-SPEECH (Romanian) — Web Speech API, no key
-   ========================================================= */
-const synth = window.speechSynthesis;
-let allVoices = [];
-function pickVoice() { if (synth) allVoices = synth.getVoices() || []; }
-if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
 
-// Best installed voice for a BCP-47 tag (e.g. "ro-RO", "nb-NO")
-function voiceFor(bcp47) {
-  if (!synth) return null;
-  if (!allVoices.length) allVoices = synth.getVoices() || [];
-  const tag = (bcp47 || "").toLowerCase();
-  const prim = tag.split("-")[0];
-  return allVoices.find(v => v.lang && v.lang.toLowerCase() === tag) ||
-         allVoices.find(v => v.lang && v.lang.toLowerCase().startsWith(prim + "-")) ||
-         allVoices.find(v => v.lang && v.lang.toLowerCase() === prim) || null;
-}
-
-// Speak a single word in a given language key (vocabulary 🔊 = source language)
-function speakWord(text, langKey) {
-  if (!synth || !text) return;
-  const L = LANGS[langKey] || srcLang();
-  synth.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = L.tts;
-  const v = voiceFor(L.tts); if (v) u.voice = v;
-  u.rate = 0.9; // a touch slower so kids catch it
-  u.pitch = 1.0;
-  synth.speak(u);
-  if (!v) toast(`Nu am găsit o voce ${L.name.toLowerCase()} instalată — se folosește vocea implicită 🔊`, "");
-}
 
 /* =========================================================
    DEMO MODE — preloaded page (instant, no key, no network)
@@ -2032,7 +2000,6 @@ $("retransBtn").addEventListener("click", async () => {
 });
 
 $("clearBtn").addEventListener("click", () => {
-  if (synth) synth.cancel();
   state.pages = [];
   state.active = -1;
   previewImg.src = ""; previewImg.style.display = "none";
