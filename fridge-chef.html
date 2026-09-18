@@ -216,7 +216,7 @@
   <header class="hero">
     <span class="logo">🍳</span>
     <h1 class="brand">Fridge <span class="accent">Chef</span></h1>
-    <p class="tagline">Tell me what's in your kitchen and I'll dream up one great dish you can actually make — powered by Claude.</p>
+    <p class="tagline">Tell me what's in your kitchen and I'll dream up one great dish you can actually make — powered by AI, no sign-up or API key needed.</p>
   </header>
 
   <!-- Input panel -->
@@ -245,21 +245,22 @@
       <button class="btn btn-ghost" id="clearBtn">Clear</button>
     </div>
 
-    <button class="settings-toggle" id="settingsToggle">⚙️ API settings</button>
+    <button class="settings-toggle" id="settingsToggle">⚙️ Advanced (optional)</button>
     <div class="settings" id="settings">
+      <p class="fhint" style="margin-top:0">Fridge Chef works right away with a <b>free, keyless AI service</b> — no setup required. If you'd rather use your own Anthropic (Claude) account for higher quality, add a key below and it'll be used instead.</p>
       <div class="field">
-        <label for="apiKey">Anthropic API key</label>
-        <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+        <label for="apiKey">Anthropic API key <span style="font-weight:400;color:var(--ink-soft)">— optional</span></label>
+        <input type="password" id="apiKey" placeholder="sk-ant-… (leave blank to use the free service)" autocomplete="off" spellcheck="false">
         <p class="fhint">Stored only in your browser (localStorage) and sent straight to Anthropic. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
       </div>
       <div class="field">
-        <label for="modelName">Model</label>
+        <label for="modelName">Anthropic model</label>
         <input type="text" id="modelName" placeholder="claude-sonnet-5">
-        <p class="fhint">Default <b>claude-sonnet-5</b>. Change this if your account uses a different model name.</p>
+        <p class="fhint">Only used when a key is set. Default <b>claude-sonnet-5</b>.</p>
       </div>
       <div class="save-row">
         <button id="saveKey">Save settings</button>
-        <span class="key-status no" id="keyStatus">No key saved yet</span>
+        <span class="key-status no" id="keyStatus">Using the free AI service</span>
       </div>
     </div>
   </section>
@@ -397,8 +398,8 @@
     modelInput.value = m || DEFAULT_MODEL;
   }
   function setKeyStatus(ok){
-    if(ok){ keyStatus.textContent = "✓ Key saved in this browser"; keyStatus.className = "key-status ok"; }
-    else { keyStatus.textContent = "No key saved yet"; keyStatus.className = "key-status no"; }
+    if(ok){ keyStatus.textContent = "✓ Using your Anthropic key"; keyStatus.className = "key-status ok"; }
+    else { keyStatus.textContent = "Using the free AI service"; keyStatus.className = "key-status no"; }
   }
   saveKeyBtn.addEventListener("click", function(){
     var k = apiKeyInput.value.trim();
@@ -409,7 +410,7 @@
     } catch(e){}
     modelInput.value = m;
     setKeyStatus(!!k);
-    showNotice("warn", "Settings saved. " + (k ? "You're ready to cook!" : "Add a key to start cooking."));
+    showNotice("warn", "Settings saved. " + (k ? "Your Anthropic key will be used." : "Using the free AI service — no key needed."));
     setTimeout(function(){ hide(notice); }, 2200);
   });
 
@@ -469,17 +470,65 @@
     ].join("\n");
   }
 
-  // ---------- Claude call ----------
-  // Prefers the in-artifact runtime (window.claude.complete) when available,
-  // otherwise calls the Anthropic Messages API directly with the user's key.
-  function askClaude(prompt, surprise){
+  // ---------- AI call ----------
+  // Priority:
+  //   1. In-artifact runtime (window.claude.complete) if present — no key.
+  //   2. The user's own Anthropic key, if they saved one (higher quality).
+  //   3. A free, keyless AI service (Pollinations) — the default, no setup.
+  function askAI(prompt, surprise){
     if(window.claude && typeof window.claude.complete === "function"){
       return window.claude.complete(prompt);
     }
-    var key = getKey();
-    if(!key){
-      return Promise.reject({ kind: "nokey" });
+    if(getKey()){
+      return askAnthropic(prompt, surprise);
     }
+    return askFree(prompt, surprise);
+  }
+
+  // Free, keyless service (OpenAI-compatible). Falls back to a plain GET if POST fails.
+  function askFree(prompt, surprise){
+    var seed = Math.floor(Math.random() * 1e9);
+    var payload = {
+      model: "openai",
+      seed: seed,
+      temperature: surprise ? 1 : 0.6,
+      referrer: "fridge-chef",
+      messages: [
+        { role: "system", content: "You are Fridge Chef. Always answer with a single valid JSON object and nothing else." },
+        { role: "user", content: prompt }
+      ]
+    };
+    return fetch("https://text.pollinations.ai/openai", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function(res){
+      if(!res.ok){ throw { kind: "api", message: "Free AI service returned HTTP " + res.status }; }
+      return res.text();
+    }).then(function(raw){
+      // Response may be OpenAI-style JSON, or plain text depending on the model.
+      try {
+        var data = JSON.parse(raw);
+        if(data && data.choices && data.choices[0] && data.choices[0].message){
+          return data.choices[0].message.content || raw;
+        }
+        if(data && (data.dishName || data.steps)) return raw; // already the recipe object
+      } catch(e){ /* not JSON envelope — treat as text */ }
+      return raw;
+    }).catch(function(err){
+      // Network/CORS or parse — try the simple GET endpoint as a fallback.
+      if(err && err.kind === "api") throw err;
+      var url = "https://text.pollinations.ai/" + encodeURIComponent(prompt) +
+                "?model=openai&seed=" + Math.floor(Math.random() * 1e9) + "&referrer=fridge-chef";
+      return fetch(url).then(function(r){
+        if(!r.ok){ throw { kind: "api", message: "Free AI service returned HTTP " + r.status }; }
+        return r.text();
+      });
+    });
+  }
+
+  // Optional: the user's own Anthropic key.
+  function askAnthropic(prompt, surprise){
     var body = {
       model: getModel(),
       max_tokens: 1200,
@@ -493,7 +542,7 @@
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-api-key": key,
+        "x-api-key": getKey(),
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true"
       },
@@ -508,8 +557,7 @@
         if(data.content && data.content.length){
           data.content.forEach(function(b){ if(b.type === "text") text += b.text; });
         }
-        // We prefilled "{", so prepend it back.
-        return "{" + text;
+        return "{" + text; // we prefilled "{"
       });
     });
   }
@@ -601,15 +649,9 @@
       ingInput.focus();
       return;
     }
-    if(!(window.claude && typeof window.claude.complete === "function") && !getKey()){
-      settings.classList.add("open");
-      showNotice("warn", "🔑 <b>Add your Anthropic API key</b> in <b>API settings</b> below so I can call Claude, then hit the button again.");
-      apiKeyInput.focus();
-      return;
-    }
 
     setBusy(true, surprise);
-    askClaude(buildPrompt(surprise), surprise)
+    askAI(buildPrompt(surprise), surprise)
       .then(function(text){
         var recipe;
         try { recipe = parseRecipe(text); }
@@ -620,15 +662,12 @@
       .catch(function(err){
         setBusy(false);
         err = err || {};
-        if(err.kind === "nokey"){
-          settings.classList.add("open");
-          showNotice("warn", "🔑 Add your Anthropic API key in <b>API settings</b> to start cooking.");
-        } else if(err.kind === "parse"){
-          showNotice("err", "🤔 Claude replied, but I couldn't read the recipe. Please try again.");
+        if(err.kind === "parse"){
+          showNotice("err", "🤔 The AI replied, but I couldn't read the recipe. Please try again.");
         } else if(err.kind === "api"){
-          showNotice("err", "<b>Claude API error:</b> " + escapeHtml(err.message) + "<br>Check your key and model name in API settings.");
+          showNotice("err", "<b>AI service error:</b> " + escapeHtml(err.message) + "<br>Please try again in a moment.");
         } else if(err instanceof TypeError){
-          showNotice("err", "🌐 Couldn't reach Claude (network/CORS). Check your connection and that your API key is valid.");
+          showNotice("err", "🌐 Couldn't reach the AI service. Check your internet connection and try again.");
         } else {
           showNotice("err", "Something went wrong. Please try again.");
         }
