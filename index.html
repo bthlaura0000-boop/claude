@@ -724,14 +724,10 @@
         <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
       </div>
       <div class="ocr-options">
-        <label>📖 Limbă text:</label>
-        <select id="ocrLang" title="Limba din care se extrage textul">
-          <option value="nor">🇳🇴 Norvegiană</option>
-          <option value="nor+eng">Norvegiană + Engleză</option>
-          <option value="dan">🇩🇰 Daneză</option>
-          <option value="swe">🇸🇪 Suedeză</option>
-          <option value="eng">🇬🇧 Engleză</option>
-        </select>
+        <label>📖 Limba cărții:</label>
+        <select id="srcLang" title="Limba din care traducem (folosită și pentru citirea textului / OCR)"></select>
+        <label>➡️ Tradu în:</label>
+        <select id="tgtLang" title="Limba în care se traduce"></select>
         <label>🧩 Așezare:</label>
         <select id="ocrPsm" title="Cum e aranjat textul pe pagină">
           <option value="3">Automat</option>
@@ -820,17 +816,17 @@
     <div id="viewParallel" style="display:none;">
       <div class="parallel">
         <div>
-          <p class="col-title no">🇳🇴 Norvegiană (original)</p>
+          <p class="col-title no" id="colTitleSrc">🇳🇴 Norvegiană (original)</p>
           <div class="story no" id="parNo"></div>
         </div>
         <div>
-          <p class="col-title ro">🇷🇴 Română (poveste)</p>
+          <p class="col-title ro" id="colTitleTgt">🇷🇴 Română (traducere)</p>
           <div class="story" id="parRo"></div>
         </div>
       </div>
     </div>
     <div id="viewNo" style="display:none;">
-      <p class="col-title no">🇳🇴 Text extras (OCR) — corectează greșelile de citire, apoi retradu</p>
+      <p class="col-title no" id="ocrEditLabel">🇳🇴 Text extras (OCR) — corectează greșelile de citire, apoi retradu</p>
       <textarea class="story no ocr-edit" id="ocrEdit" spellcheck="false" placeholder="Textul norvegian extras din imagine va apărea aici..."></textarea>
       <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <button class="btn-mint" id="retransBtn" type="button">🔁 Retradu textul corectat</button>
@@ -846,9 +842,9 @@
 
     <!-- Vocabulary -->
     <div id="vocabSection" style="display:none;">
-      <div class="section-title">📖 Micul dicționar (Norvegiană → Română)</div>
+      <div class="section-title" id="vocabTitle">📖 Mic dicționar (Norvegiană → Română)</div>
       <table class="vocab">
-        <thead><tr><th>🔊</th><th>🇳🇴 Norvegiană</th><th>🇷🇴 Română</th></tr></thead>
+        <thead><tr><th>🔊</th><th id="vocThSrc">🇳🇴 Norvegiană</th><th id="vocThTgt">🇷🇴 Română</th></tr></thead>
         <tbody id="vocabBody"></tbody>
       </table>
     </div>
@@ -887,6 +883,47 @@ const state = {
 };
 // active page helper
 const AP = () => (state.active >= 0 ? state.pages[state.active] : null) || null;
+
+/* ---------- Languages ----------
+   tess = Tesseract OCR code · trans = translation service code · tts = speech (BCP-47) */
+const LANGS = {
+  nor: { flag:"🇳🇴", name:"Norvegiană",   tess:"nor", trans:"no", tts:"nb-NO" },
+  dan: { flag:"🇩🇰", name:"Daneză",       tess:"dan", trans:"da", tts:"da-DK" },
+  swe: { flag:"🇸🇪", name:"Suedeză",      tess:"swe", trans:"sv", tts:"sv-SE" },
+  isl: { flag:"🇮🇸", name:"Islandeză",    tess:"isl", trans:"is", tts:"is-IS" },
+  eng: { flag:"🇬🇧", name:"Engleză",      tess:"eng", trans:"en", tts:"en-GB" },
+  deu: { flag:"🇩🇪", name:"Germană",      tess:"deu", trans:"de", tts:"de-DE" },
+  nld: { flag:"🇳🇱", name:"Neerlandeză",  tess:"nld", trans:"nl", tts:"nl-NL" },
+  fra: { flag:"🇫🇷", name:"Franceză",     tess:"fra", trans:"fr", tts:"fr-FR" },
+  spa: { flag:"🇪🇸", name:"Spaniolă",     tess:"spa", trans:"es", tts:"es-ES" },
+  ita: { flag:"🇮🇹", name:"Italiană",     tess:"ita", trans:"it", tts:"it-IT" },
+  por: { flag:"🇵🇹", name:"Portugheză",   tess:"por", trans:"pt", tts:"pt-PT" },
+  ron: { flag:"🇷🇴", name:"Română",       tess:"ron", trans:"ro", tts:"ro-RO" },
+  pol: { flag:"🇵🇱", name:"Poloneză",     tess:"pol", trans:"pl", tts:"pl-PL" },
+  hun: { flag:"🇭🇺", name:"Maghiară",     tess:"hun", trans:"hu", tts:"hu-HU" },
+  ces: { flag:"🇨🇿", name:"Cehă",         tess:"ces", trans:"cs", tts:"cs-CZ" },
+  fin: { flag:"🇫🇮", name:"Finlandeză",   tess:"fin", trans:"fi", tts:"fi-FI" },
+  ell: { flag:"🇬🇷", name:"Greacă",       tess:"ell", trans:"el", tts:"el-GR" },
+  tur: { flag:"🇹🇷", name:"Turcă",        tess:"tur", trans:"tr", tts:"tr-TR" },
+  rus: { flag:"🇷🇺", name:"Rusă",         tess:"rus", trans:"ru", tts:"ru-RU" },
+  ukr: { flag:"🇺🇦", name:"Ucraineană",   tess:"ukr", trans:"uk", tts:"uk-UA" },
+};
+const langLabel = (k) => { const l = LANGS[k]; return l ? `${l.flag} ${l.name}` : k; };
+function srcLang(){ return LANGS[$("srcLang").value] || LANGS.nor; }
+function tgtLang(){ return LANGS[$("tgtLang").value] || LANGS.ron; }
+
+(function initLangs(){
+  const src = $("srcLang"), tgt = $("tgtLang");
+  const order = ["nor","dan","swe","isl","eng","deu","nld","fra","spa","ita","por","ron","pol","hun","ces","fin","ell","tur","rus","ukr"];
+  order.forEach(k => {
+    const o1 = document.createElement("option"); o1.value = k; o1.textContent = langLabel(k); src.appendChild(o1);
+    const o2 = document.createElement("option"); o2.value = k; o2.textContent = langLabel(k); tgt.appendChild(o2);
+  });
+  src.value = localStorage.getItem("cf_src") || "nor";
+  tgt.value = localStorage.getItem("cf_tgt") || "ron";
+  src.addEventListener("change", () => localStorage.setItem("cf_src", src.value));
+  tgt.addEventListener("change", () => localStorage.setItem("cf_tgt", tgt.value));
+})();
 
 /* ---------- Toast ---------- */
 let toastTimer;
@@ -1309,6 +1346,8 @@ $("translateBtn").addEventListener("click", async () => {
    KEYLESS ENGINE — OCR (Tesseract.js) + free translation
    ========================================================= */
 async function runKeyless() {
+  const srcKey = $("srcLang").value, tgtKey = $("tgtLang").value;
+  const src = LANGS[srcKey], tgt = LANGS[tgtKey];
   // 1) OCR (with image preprocessing for accuracy)
   const raw = await ocrImage();
   if (!raw || raw.replace(/\s/g,"").length < 2) {
@@ -1316,26 +1355,28 @@ async function runKeyless() {
   }
   // 2) reflow wrapped lines into real paragraphs (so translation keeps context)
   const noText = reflowText(raw);
-  // 3) local knowledge (offline)
-  const terms = detectFolklore(noText);
-  const vocab = extractVocab(noText);
+  // 3) local knowledge — curated folclor only for Norvegiană→Română
+  const terms = (src.tess === "nor" && tgt.trans === "ro") ? detectFolklore(noText) : [];
   // 4) faithful translation (free, no key), paragraph by paragraph
-  const roText = await translateNoToRo(noText);
-  applyResult({ no: noText, ro: roText, terms, vocab });
+  const roText = await translateText(noText, src.trans, tgt.trans);
+  // 5) vocabulary (curated NO→RO, or generic for any pair)
+  const vocab = await buildVocab(noText, src, tgt);
+  applyResult({ no: noText, ro: roText, terms, vocab, src: srcKey, tgt: tgtKey });
   setMode("parallel");
   toast("Gata! Poți corecta textul OCR și retraduce dacă e nevoie ✍️", "ok");
 }
 
 /* Dedicated reader: extract text only (no translation) so you can verify/fix it first */
 async function extractOnly() {
+  const srcKey = $("srcLang").value, tgtKey = $("tgtLang").value;
+  const src = LANGS[srcKey], tgt = LANGS[tgtKey];
   const raw = await ocrImage();
   if (!raw || raw.replace(/\s/g,"").length < 2) {
     throw new Error("Nu am găsit text lizibil. Încearcă selectarea zonei cu text (✂️), o poză mai clară sau altă limbă/așezare. 📷");
   }
   const noText = reflowText(raw);
-  const terms = detectFolklore(noText);
-  const vocab = extractVocab(noText);
-  applyResult({ no: noText, ro: "", terms, vocab });
+  const terms = (src.tess === "nor" && tgt.trans === "ro") ? detectFolklore(noText) : [];
+  applyResult({ no: noText, ro: "", terms, vocab: [], src: srcKey, tgt: tgtKey });
   setMode("no");
   toast("Text extras! Verifică-l, corectează greșelile, apoi apasă „🔁 Retradu textul corectat” ✍️", "ok");
 }
@@ -1410,7 +1451,7 @@ async function ocrImage() {
   if (typeof Tesseract === "undefined") {
     throw new Error("Motorul OCR nu s-a încărcat (verifică internetul). Poți folosi Mod Demo între timp. 🔌");
   }
-  const lang = $("ocrLang").value || "nor";
+  const lang = srcLang().tess || "nor";
   const psm  = $("ocrPsm").value || "3";
 
   const page = AP();
@@ -1478,7 +1519,8 @@ function joinWrappedLines(lines){
 }
 
 /* ---- Faithful free translation, paragraph by paragraph (keeps context) ---- */
-async function translateNoToRo(text) {
+async function translateText(text, src, tgt) {
+  src = src || "no"; tgt = tgt || "ro";
   const paras = text.split(/\n{2,}/);
   const nonEmpty = paras.filter(p => p.trim()).length || 1;
   const out = [];
@@ -1489,7 +1531,7 @@ async function translateNoToRo(text) {
     showLoader(true, `Traducem cu grijă... paragraful ${done}/${nonEmpty} 🪄`, 50 + (done/nonEmpty)*48);
     const chunks = chunkText(p, 1400);
     const translated = [];
-    for (const c of chunks) translated.push(await translateChunk(c));
+    for (const c of chunks) translated.push(await translateChunk(c, src, tgt));
     out.push(translated.join(" "));
   }
   showLoader(true, "Aproape gata... ✨", 99);
@@ -1512,19 +1554,20 @@ function chunkText(line, maxLen) {
   return parts;
 }
 
-async function translateChunk(text) {
+async function translateChunk(text, src, tgt) {
+  src = src || "no"; tgt = tgt || "ro";
   // Try quality services in order; if all fail, keep original so nothing is lost.
-  try { const r = await tGoogle(text);   if (validTr(r, text)) return r; } catch (_) {}
-  try { const r = await tLingva(text);   if (validTr(r, text)) return r; } catch (_) {}
-  try { const r = await tMyMemory(text); if (validTr(r, text)) return r; } catch (_) {}
+  try { const r = await tGoogle(text, src, tgt);   if (validTr(r, text)) return r; } catch (_) {}
+  try { const r = await tLingva(text, src, tgt);   if (validTr(r, text)) return r; } catch (_) {}
+  try { const r = await tMyMemory(text, src, tgt); if (validTr(r, text)) return r; } catch (_) {}
   return text;
 }
 function validTr(r, src){
   return r && r.trim().length > 0 && !/MYMEMORY WARNING|QUERY LENGTH LIMIT|INVALID/i.test(r);
 }
 
-async function tGoogle(text) {
-  const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=no&tl=ro&dt=t&q=" + encodeURIComponent(text);
+async function tGoogle(text, src, tgt) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(src)}&tl=${encodeURIComponent(tgt)}&dt=t&q=` + encodeURIComponent(text);
   const r = await fetch(url);
   if (!r.ok) throw new Error("google");
   const d = await r.json();
@@ -1532,8 +1575,8 @@ async function tGoogle(text) {
   return d[0].map(seg => (seg && seg[0]) ? seg[0] : "").join("");
 }
 
-async function tLingva(text) {
-  const url = "https://lingva.ml/api/v1/no/ro/" + encodeURIComponent(text);
+async function tLingva(text, src, tgt) {
+  const url = `https://lingva.ml/api/v1/${encodeURIComponent(src)}/${encodeURIComponent(tgt)}/` + encodeURIComponent(text);
   const r = await fetch(url);
   if (!r.ok) throw new Error("lingva");
   const d = await r.json();
@@ -1541,14 +1584,42 @@ async function tLingva(text) {
   return d.translation;
 }
 
-async function tMyMemory(text) {
-  const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) + "&langpair=no|ro";
+async function tMyMemory(text, src, tgt) {
+  const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) + `&langpair=${encodeURIComponent(src)}|${encodeURIComponent(tgt)}`;
   const r = await fetch(url);
   if (!r.ok) throw new Error("mymemory");
   const d = await r.json();
   const tr = d?.responseData?.translatedText;
   if (!tr) throw new Error("mymemory-empty");
   return tr;
+}
+
+/* ---- Vocabulary builder ----
+   Uses the curated Norwegian→Romanian dictionary for that pair (fast, offline);
+   for any other language pair, picks a few key words and translates them. */
+async function buildVocab(text, src, tgt){
+  if (src.tess === "nor" && tgt.trans === "ro") return extractVocab(text);
+  const words = pickKeyWords(text, 10);
+  const out = [];
+  for (const w of words){
+    let tr = "";
+    try { tr = await translateChunk(w, src.trans, tgt.trans); } catch (_) {}
+    if (tr && tr.trim() && tr.trim().toLowerCase() !== w.toLowerCase()) out.push({ no: w, ro: tr.trim() });
+  }
+  return out;
+}
+function pickKeyWords(text, n){
+  const seen = new Set(); const out = [];
+  for (const raw of (text || "").split(/\s+/)){
+    let w = raw.replace(/[^\p{L}\u00C0-\u024F]/gu, "");
+    if (w.length < 4) continue;
+    const key = w.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(w);
+    if (out.length >= n) break;
+  }
+  return out;
 }
 
 /* =========================================================
@@ -1615,10 +1686,24 @@ function renderResult(r) {
   const hasContent = r && (r.ro || r.no || (r.terms && r.terms.length) || (r.vocab && r.vocab.length));
   if (!hasContent) { rc.style.display = "none"; return; }
 
+  // dynamic language labels for this result
+  const srcL = LANGS[r.src] || srcLang();
+  const tgtL = LANGS[r.tgt] || tgtLang();
+  const mb = (m) => document.querySelector(`.mode-btn[data-mode="${m}"]`);
+  if (mb("ro")) mb("ro").textContent = `${tgtL.flag} Doar ${tgtL.name}`;
+  if (mb("parallel")) mb("parallel").textContent = `🔀 Paralel (${srcL.name} / ${tgtL.name})`;
+  if (mb("no")) mb("no").textContent = `${srcL.flag} Text OCR (${srcL.name})`;
+  $("colTitleSrc").textContent = `${srcL.flag} ${srcL.name} (original)`;
+  $("colTitleTgt").textContent = `${tgtL.flag} ${tgtL.name} (traducere)`;
+  $("ocrEditLabel").textContent = `${srcL.flag} Text extras (OCR) — corectează greșelile, apoi retradu`;
+  $("vocabTitle").textContent = `📖 Mic dicționar (${srcL.name} → ${tgtL.name})`;
+  $("vocThSrc").textContent = `${srcL.flag} ${srcL.name}`;
+  $("vocThTgt").textContent = `${tgtL.flag} ${tgtL.name}`;
+
   $("storyRo").textContent = r.ro || "(fără traducere — apasă „Extrage + Tradu”)";
   $("parRo").textContent = r.ro || "(fără traducere)";
   $("ocrEdit").value = r.no || "";
-  $("parNo").textContent = r.no || "(fără text norvegian)";
+  $("parNo").textContent = r.no || `(fără text ${srcL.name.toLowerCase()})`;
 
   const tb = $("termsBox");
   tb.innerHTML = "";
@@ -1637,8 +1722,8 @@ function renderResult(r) {
   if (r.vocab && r.vocab.length) {
     r.vocab.forEach(v => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="play" title="Ascultă cuvântul în norvegiană 🇳🇴">🔊</td><td>${esc(v.no)}</td><td>${esc(v.ro)}</td>`;
-      tr.querySelector(".play").addEventListener("click", () => speakWordNO(v.no));
+      tr.innerHTML = `<td class="play" title="Ascultă cuvântul în ${srcL.name} ${srcL.flag}">🔊</td><td>${esc(v.no)}</td><td>${esc(v.ro)}</td>`;
+      tr.querySelector(".play").addEventListener("click", () => speakWord(v.no, r.src || $("srcLang").value));
       vb.appendChild(tr);
     });
     $("vocabSection").style.display = "block";
@@ -1677,16 +1762,28 @@ document.querySelectorAll(".mode-btn").forEach(b =>
    TEXT-TO-SPEECH (Romanian) — Web Speech API, no key
    ========================================================= */
 const synth = window.speechSynthesis;
-let roVoice = null, noVoice = null;
-function pickVoice() {
-  if (!synth) return;
-  const voices = synth.getVoices();
-  roVoice = voices.find(v => /ro(-|_)?/i.test(v.lang)) ||
-            voices.find(v => /rom[aâ]n/i.test(v.name)) || null;
-  noVoice = voices.find(v => /^(nb|nn|no)(-|_)?/i.test(v.lang)) ||
-            voices.find(v => /norsk|norweg/i.test(v.name)) || null;
-}
+let allVoices = [];
+function pickVoice() { if (synth) allVoices = synth.getVoices() || []; }
 if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
+
+// Best installed voice for a BCP-47 tag (e.g. "ro-RO", "nb-NO")
+function voiceFor(bcp47) {
+  if (!synth) return null;
+  if (!allVoices.length) allVoices = synth.getVoices() || [];
+  const tag = (bcp47 || "").toLowerCase();
+  const prim = tag.split("-")[0];
+  return allVoices.find(v => v.lang && v.lang.toLowerCase() === tag) ||
+         allVoices.find(v => v.lang && v.lang.toLowerCase().startsWith(prim + "-")) ||
+         allVoices.find(v => v.lang && v.lang.toLowerCase() === prim) || null;
+}
+
+// Languages of the currently shown page's result (fallback to the selectors)
+function resultLangs() {
+  const r = AP() && AP().result;
+  const srcKey = (r && r.src) || $("srcLang").value;
+  const tgtKey = (r && r.tgt) || $("tgtLang").value;
+  return { src: LANGS[srcKey] || srcLang(), tgt: LANGS[tgtKey] || tgtLang() };
+}
 
 function currentSpeakText() {
   const p = AP();
@@ -1694,41 +1791,36 @@ function currentSpeakText() {
   return state.mode === "no" ? p.result.no : p.result.ro;
 }
 
-// Speak a single Norwegian word (used by the vocabulary 🔊 buttons)
-function speakWordNO(text) {
+// Speak a single word in a given language key (vocabulary 🔊 = source language)
+function speakWord(text, langKey) {
   if (!synth || !text) return;
+  const L = LANGS[langKey] || srcLang();
   synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = "nb-NO";
-  if (noVoice) u.voice = noVoice;
+  u.lang = L.tts;
+  const v = voiceFor(L.tts); if (v) u.voice = v;
   u.rate = Math.min(0.95, parseFloat($("rate").value)); // a touch slower so kids catch it
   u.pitch = 1.0;
   synth.speak(u);
-  if (!noVoice) toast("Nu am găsit o voce norvegiană instalată — se folosește vocea implicită 🔊", "");
+  if (!v) toast(`Nu am găsit o voce ${L.name.toLowerCase()} instalată — se folosește vocea implicită 🔊`, "");
 }
 function speak() {
   if (!synth) { toast("Browserul tău nu suportă citirea vocală 😔", "err"); return; }
   if (synth.paused) { synth.resume(); setAudioState("playing"); return; }
   const text = currentSpeakText();
   if (!text) { toast("Nu există text de citit.", "err"); return; }
+  const L = resultLangs();
+  const lang = state.mode === "no" ? L.src : L.tgt;
   synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = state.mode === "no" ? "nb-NO" : "ro-RO";
-  if (state.mode !== "no" && roVoice) u.voice = roVoice;
+  u.lang = lang.tts;
+  const v = voiceFor(lang.tts); if (v) u.voice = v;
   u.rate = parseFloat($("rate").value);
   u.pitch = 1.05;
   u.onend = () => setAudioState("stopped");
   u.onerror = () => setAudioState("stopped");
   synth.speak(u);
   setAudioState("playing");
-}
-function speakOnce(text) {
-  if (!synth || !text) return;
-  synth.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "ro-RO"; if (roVoice) u.voice = roVoice;
-  u.rate = parseFloat($("rate").value);
-  synth.speak(u);
 }
 function setAudioState(s) {
   const playing = s === "playing";
@@ -1773,9 +1865,10 @@ function speakBookPage(){
   selectPage(i);                       // show + highlight the page being read
   setMode("ro");
   const r = state.pages[i].result;
+  const L = LANGS[r.tgt] || tgtLang();
   const u = new SpeechSynthesisUtterance(r.ro);
-  u.lang = "ro-RO";
-  if (roVoice) u.voice = roVoice;
+  u.lang = L.tts;
+  const v = voiceFor(L.tts); if (v) u.voice = v;
   u.rate = parseFloat($("rate").value);
   u.pitch = 1.05;
   u.onend = () => { if (readingBook) { bookPos++; speakBookPage(); } };
@@ -1843,6 +1936,9 @@ const DEMO_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(`
 </svg>`);
 
 $("demoBtn").addEventListener("click", () => {
+  // demo is a Norwegian → Romanian sample
+  $("srcLang").value = "nor"; $("tgtLang").value = "ron";
+  localStorage.setItem("cf_src", "nor"); localStorage.setItem("cf_tgt", "ron");
   const p = addPage(DEMO_IMG, "image/svg+xml", "Pagina demo");
   state.active = state.pages.length - 1;
   $("pagesCard").style.display = "block";
@@ -1851,7 +1947,9 @@ $("demoBtn").addEventListener("click", () => {
   showLoader(true, "Pregătim povestea demo... ✨", 60);
   setTimeout(() => {
     showLoader(false);
-    applyResult(JSON.parse(JSON.stringify(DEMO)));
+    const demo = JSON.parse(JSON.stringify(DEMO));
+    demo.src = "nor"; demo.tgt = "ron";
+    applyResult(demo);
     toast("Mod Demo activat — fără cheie, fără internet! ✨", "ok");
   }, 600);
 });
@@ -1865,11 +1963,13 @@ $("retransBtn").addEventListener("click", async () => {
   const edited = $("ocrEdit").value.trim();
   if (!edited) { toast("Nu există text de tradus. Corectează textul mai întâi ✍️", "err"); return; }
   try {
+    const srcKey = $("srcLang").value, tgtKey = $("tgtLang").value;
+    const src = LANGS[srcKey], tgt = LANGS[tgtKey];
     const noText = reflowText(edited);
-    const terms = detectFolklore(noText);
-    const vocab = extractVocab(noText);
-    const roText = await translateNoToRo(noText);
-    applyResult({ no: noText, ro: roText, terms, vocab });
+    const terms = (src.tess === "nor" && tgt.trans === "ro") ? detectFolklore(noText) : [];
+    const roText = await translateText(noText, src.trans, tgt.trans);
+    const vocab = await buildVocab(noText, src, tgt);
+    applyResult({ no: noText, ro: roText, terms, vocab, src: srcKey, tgt: tgtKey });
     setMode("parallel");
     toast("Am retradus textul corectat 🎉", "ok");
   } catch (err) {
@@ -1951,14 +2051,16 @@ function buildBookHTML(){
 
   const sections = done.map(({ p, i }) => {
     const r = p.result;
+    const sName = (LANGS[r.src] || srcLang()).name;
+    const tName = (LANGS[r.tgt] || tgtLang()).name;
     const terms = (r.terms && r.terms.length)
       ? `<h3>🧌 Cuvinte din folclor</h3>` + r.terms.map(t => `<p class="term"><b>${e(t.term)}</b> — ${e(t.explain)}</p>`).join("")
       : "";
     const vocab = (r.vocab && r.vocab.length)
-      ? `<h3>📖 Vocabular</h3><table class="voc"><tr><th>Norvegiană</th><th>Română</th></tr>` +
+      ? `<h3>📖 Vocabular</h3><table class="voc"><tr><th>${e(sName)}</th><th>${e(tName)}</th></tr>` +
         r.vocab.map(v => `<tr><td>${e(v.no)}</td><td>${e(v.ro)}</td></tr>`).join("") + `</table>`
       : "";
-    const orig = r.no ? `<details class="orig"><summary>Text original în norvegiană</summary><p>${br(r.no)}</p></details>` : "";
+    const orig = r.no ? `<details class="orig"><summary>Text original (${e(sName)})</summary><p>${br(r.no)}</p></details>` : "";
     return `<section class="pg">
       <h2>📖 Pagina ${i+1}</h2>
       <div class="ro">${br(r.ro || "(fără traducere)")}</div>
@@ -1991,7 +2093,7 @@ function buildBookHTML(){
   @media print{ body{max-width:none;padding:0;} .pg{page-break-after:always;border-bottom:none;} .pg:last-child{page-break-after:auto;} .orig[open]{} .orig{display:block;} }
 </style></head>
 <body>
-  <header><h1>🧚 Cartea Fermecată</h1><p>Traducere din norvegiană în română · ${done.length} ${done.length===1?"pagină":"pagini"}</p></header>
+  <header><h1>🧚 Cartea Fermecată</h1><p>Traducere din ${srcLang().name.toLowerCase()} în ${tgtLang().name.toLowerCase()} · ${done.length} ${done.length===1?"pagină":"pagini"}</p></header>
   ${sections || "<p>Nu există încă pagini traduse. Tradu paginile mai întâi.</p>"}
   <footer>Creat cu Cartea Fermecată ♥</footer>
 </body></html>`;
