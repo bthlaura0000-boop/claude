@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🍳 Fridge Chef — Cook something great with what you already have</title>
-<meta name="description" content="Type in what's in your fridge and let Claude suggest a delicious dish you can actually make.">
+<title>🍳 Bucătarul din Frigider — Gătește ceva bun din ce ai deja acasă</title>
+<meta name="description" content="Scrie ce ai prin frigider și primești o rețetă gustoasă pe care chiar o poți face.">
 <meta name="theme-color" content="#e8623a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,15 +45,15 @@
   h1,h2,h3,.serif{font-family:'Fraunces',Georgia,serif;}
   .wrap{max-width:900px;margin:0 auto;padding:26px 18px 90px;}
 
-  /* Header */
+  /* Antet */
   header.hero{text-align:center;padding:10px 8px 4px;}
   .logo{font-size:clamp(40px,8vw,64px);line-height:1;display:inline-block;filter:drop-shadow(0 8px 16px rgba(232,98,58,.25));animation:bob 4s ease-in-out infinite;}
   @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
-  .brand{font-size:clamp(34px,6.5vw,56px);font-weight:700;margin:6px 0 0;letter-spacing:-.5px;color:var(--ink);}
+  .brand{font-size:clamp(30px,6vw,50px);font-weight:700;margin:6px 0 0;letter-spacing:-.5px;color:var(--ink);}
   .brand .accent{color:var(--tomato);}
-  .tagline{margin:8px auto 0;color:var(--ink-soft);font-size:clamp(14px,2.2vw,18px);max-width:520px;font-weight:500;}
+  .tagline{margin:8px auto 0;color:var(--ink-soft);font-size:clamp(14px,2.2vw,18px);max-width:540px;font-weight:500;}
 
-  /* Cards */
+  /* Carduri */
   .card{
     background:var(--card);
     border:1px solid var(--line);
@@ -65,8 +65,19 @@
 
   .label{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 4px;display:flex;align-items:center;gap:9px;}
   .sub{color:var(--ink-soft);font-size:14px;margin:0 0 16px;}
+  .step-num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--tomato);color:#fff;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;flex:0 0 auto;}
 
-  /* Ingredient input */
+  /* Selector masă */
+  .meal-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;}
+  .meal-opt{
+    cursor:pointer;border:2px solid var(--line);background:#fff;color:var(--ink);
+    font-family:'Inter',sans-serif;font-weight:600;font-size:15px;padding:11px 18px;border-radius:100px;
+    display:inline-flex;align-items:center;gap:8px;transition:.15s;
+  }
+  .meal-opt:hover{border-color:var(--tomato);}
+  .meal-opt.active{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(232,98,58,.28);}
+
+  /* Câmp ingrediente */
   .chip-field{
     display:flex;flex-wrap:wrap;gap:8px;align-items:center;
     border:2px solid var(--line);border-radius:16px;background:var(--cream);
@@ -99,7 +110,7 @@
   }
   .quick:hover{background:var(--herb);color:#fff;border-color:transparent;}
 
-  /* Buttons */
+  /* Butoane */
   .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;}
   button.btn{
     cursor:pointer;border:none;border-radius:14px;padding:15px 22px;font-size:16px;font-weight:700;
@@ -109,51 +120,24 @@
   button.btn:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.3);}
   button.btn:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.04);}
   button.btn:not(:disabled):active{transform:translateY(1px);}
-  .btn-primary{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));box-shadow:0 10px 24px rgba(232,98,58,.34);flex:1;min-width:200px;justify-content:center;}
+  .btn-primary{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));box-shadow:0 10px 24px rgba(232,98,58,.34);flex:1;min-width:220px;justify-content:center;}
   .btn-surprise{background:linear-gradient(135deg,var(--butter),#e69516);color:#5a3d05;box-shadow:0 10px 24px rgba(242,177,52,.36);}
   .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);box-shadow:none;padding:15px 16px;}
   .btn-ghost:not(:disabled):hover{color:var(--ink);border-color:var(--ink-soft);filter:none;}
   .btn .shine{position:absolute;inset:0;background:linear-gradient(120deg,transparent 34%,rgba(255,255,255,.45) 50%,transparent 66%);transform:translateX(-140%);}
   button.btn:not(:disabled):hover .shine{transition:transform .6s ease;transform:translateX(140%);}
 
-  /* Settings */
-  .settings-toggle{
-    all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;color:var(--ink-soft);
-    font-size:13px;font-weight:600;margin-top:16px;padding:6px 4px;transition:.15s;
-  }
-  .settings-toggle:hover{color:var(--tomato);}
-  .settings{display:none;margin-top:14px;padding-top:16px;border-top:1px dashed var(--line);}
-  .settings.open{display:block;animation:fade .25s ease;}
-  @keyframes fade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-  .field{margin-bottom:14px;}
-  .field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;}
-  .field input{
-    width:100%;padding:11px 14px;border:2px solid var(--line);border-radius:12px;background:var(--cream);
-    font:inherit;font-size:14px;color:var(--ink);outline:none;transition:.2s;
-  }
-  .field input:focus{border-color:var(--tomato);box-shadow:0 0 0 4px rgba(232,98,58,.12);}
-  .field .fhint{font-size:12px;color:var(--ink-soft);margin-top:6px;}
-  .field .fhint a{color:var(--tomato-deep);font-weight:600;}
-  .settings .save-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-  .settings .save-row button{
-    cursor:pointer;border:none;border-radius:12px;padding:10px 18px;font-weight:700;font-size:14px;
-    background:var(--herb);color:#fff;transition:.15s;
-  }
-  .settings .save-row button:hover{filter:brightness(1.05);}
-  .key-status{font-size:12.5px;font-weight:600;}
-  .key-status.ok{color:var(--herb-deep);}
-  .key-status.no{color:var(--ink-soft);}
-
-  /* Loader */
+  /* Încărcare */
   .loader{display:none;text-align:center;padding:34px 20px;}
   .loader.show{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
   .pan{font-size:52px;display:inline-block;animation:sizzle .9s ease-in-out infinite;}
   @keyframes sizzle{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-4px)}}
   .loader p{margin:14px 0 0;font-weight:600;color:var(--ink-soft);}
   .loader .dots::after{content:"";animation:dots 1.4s steps(4,end) infinite;}
   @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}100%{content:""}}
 
-  /* Result */
+  /* Rezultat */
   #result{display:none;}
   #result.show{display:block;animation:riseIn .5s cubic-bezier(.2,.7,.2,1) both;}
   @keyframes riseIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
@@ -161,6 +145,8 @@
   .dish-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
   .badge{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:100px;}
   .badge.surprise{background:linear-gradient(135deg,var(--butter),#e69516);color:#5a3d05;}
+  .badge.meal{background:rgba(92,138,58,.12);color:var(--herb-deep);}
+  .badge.time{background:rgba(232,98,58,.12);color:var(--tomato-deep);}
   .badge.meta{background:var(--cream);color:var(--ink-soft);border:1px solid var(--line);}
   .dish-name{font-size:clamp(26px,5vw,38px);font-weight:700;margin:2px 0 8px;line-height:1.1;color:var(--ink);}
   .dish-blurb{color:var(--ink-soft);font-size:16px;font-style:italic;font-family:'Fraunces',serif;margin:0;}
@@ -193,20 +179,19 @@
   .result-foot button.again{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));color:#fff;border-color:transparent;}
   .result-foot button.again:hover{color:#fff;filter:brightness(1.05);}
 
-  /* Error / notice */
+  /* Notificări */
   .notice{display:none;margin-top:16px;padding:14px 16px;border-radius:14px;font-size:14px;font-weight:500;}
   .notice.show{display:block;animation:fade .25s ease;}
   .notice.err{background:#fdece7;border:1px solid #f4c3b4;color:#a5391c;}
   .notice.warn{background:#fff6e0;border:1px solid #f2d98c;color:#8a6410;}
   .notice b{font-weight:700;}
-  .notice a{color:inherit;font-weight:700;}
 
   footer{text-align:center;margin-top:34px;color:var(--ink-soft);font-size:13px;line-height:1.7;}
   footer .heart{color:var(--tomato);}
 
   @media print{
     body{background:#fff;}
-    .panel:not(#resultPanel),.actions,.settings-toggle,.settings,footer,.result-foot,.loader{display:none !important;}
+    .panel:not(#resultPanel),.actions,footer,.result-foot,.loader{display:none !important;}
     .card{box-shadow:none;border:1px solid #ddd;}
   }
 </style>
@@ -215,65 +200,56 @@
 <div class="wrap">
   <header class="hero">
     <span class="logo">🍳</span>
-    <h1 class="brand">Fridge <span class="accent">Chef</span></h1>
-    <p class="tagline">Tell me what's in your kitchen and I'll dream up one great dish you can actually make — powered by AI, no sign-up or API key needed.</p>
+    <h1 class="brand">Bucătarul din <span class="accent">Frigider</span></h1>
+    <p class="tagline">Spune-mi ce ai prin bucătărie și îți propun o rețetă gustoasă pe care chiar o poți face. Simplu și gratuit.</p>
   </header>
 
-  <!-- Input panel -->
+  <!-- Panou de introducere -->
   <section class="card panel" id="inputPanel">
-    <p class="label">🧺 What have you got?</p>
-    <p class="sub">Add your ingredients one at a time — press <b>Enter</b> or comma after each.</p>
+
+    <p class="label"><span class="step-num">1</span> Pentru ce masă?</p>
+    <div class="meal-row" id="mealRow">
+      <button class="meal-opt" data-meal="mic dejun">☕ Mic dejun</button>
+      <button class="meal-opt active" data-meal="prânz">🍽️ Prânz</button>
+      <button class="meal-opt" data-meal="cină">🌙 Cină</button>
+    </div>
+
+    <p class="label"><span class="step-num">2</span> Ce ai prin casă?</p>
+    <p class="sub">Adaugă ingredientele pe rând — apasă <b>Enter</b> sau virgulă după fiecare.</p>
 
     <div class="chip-field" id="chipField">
-      <input type="text" id="ingInput" placeholder="e.g. eggs, spinach, cheddar…" autocomplete="off" spellcheck="false" aria-label="Add an ingredient">
+      <input type="text" id="ingInput" placeholder="ex: ouă, spanac, cașcaval…" autocomplete="off" spellcheck="false" aria-label="Adaugă un ingredient">
     </div>
 
     <div class="suggest-row">
-      <span class="hint-lite">Quick add:</span>
-      <button class="quick" data-add="eggs">eggs</button>
-      <button class="quick" data-add="onion">onion</button>
-      <button class="quick" data-add="garlic">garlic</button>
-      <button class="quick" data-add="rice">rice</button>
-      <button class="quick" data-add="tomatoes">tomatoes</button>
-      <button class="quick" data-add="chicken">chicken</button>
-      <button class="quick" data-add="pasta">pasta</button>
+      <span class="hint-lite">Adaugă rapid:</span>
+      <button class="quick" data-add="ouă">ouă</button>
+      <button class="quick" data-add="ceapă">ceapă</button>
+      <button class="quick" data-add="usturoi">usturoi</button>
+      <button class="quick" data-add="orez">orez</button>
+      <button class="quick" data-add="roșii">roșii</button>
+      <button class="quick" data-add="pui">pui</button>
+      <button class="quick" data-add="paste">paste</button>
+      <button class="quick" data-add="cartofi">cartofi</button>
+      <button class="quick" data-add="brânză">brânză</button>
     </div>
 
     <div class="actions">
-      <button class="btn btn-primary" id="cookBtn"><span class="shine"></span>🍽️ Find me a dish</button>
-      <button class="btn btn-surprise" id="surpriseBtn"><span class="shine"></span>✨ Surprise me</button>
-      <button class="btn btn-ghost" id="clearBtn">Clear</button>
-    </div>
-
-    <button class="settings-toggle" id="settingsToggle">⚙️ Advanced (optional)</button>
-    <div class="settings" id="settings">
-      <p class="fhint" style="margin-top:0">Fridge Chef works right away with a <b>free, keyless AI service</b> — no setup required. If you'd rather use your own Anthropic (Claude) account for higher quality, add a key below and it'll be used instead.</p>
-      <div class="field">
-        <label for="apiKey">Anthropic API key <span style="font-weight:400;color:var(--ink-soft)">— optional</span></label>
-        <input type="password" id="apiKey" placeholder="sk-ant-… (leave blank to use the free service)" autocomplete="off" spellcheck="false">
-        <p class="fhint">Stored only in your browser (localStorage) and sent straight to Anthropic. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
-      </div>
-      <div class="field">
-        <label for="modelName">Anthropic model</label>
-        <input type="text" id="modelName" placeholder="claude-sonnet-5">
-        <p class="fhint">Only used when a key is set. Default <b>claude-sonnet-5</b>.</p>
-      </div>
-      <div class="save-row">
-        <button id="saveKey">Save settings</button>
-        <span class="key-status no" id="keyStatus">Using the free AI service</span>
-      </div>
+      <button class="btn btn-primary" id="cookBtn"><span class="shine"></span>🍽️ Găsește o rețetă</button>
+      <button class="btn btn-surprise" id="surpriseBtn"><span class="shine"></span>✨ Surprinde-mă</button>
+      <button class="btn btn-ghost" id="clearBtn">Șterge</button>
     </div>
   </section>
 
   <div class="notice" id="notice"></div>
 
-  <!-- Loader -->
+  <!-- Încărcare -->
   <div class="loader panel" id="loader">
     <span class="pan">🍳</span>
-    <p id="loaderText">Rummaging through your fridge<span class="dots"></span></p>
+    <p id="loaderText">Caut prin frigider<span class="dots"></span></p>
   </div>
 
-  <!-- Result -->
+  <!-- Rezultat -->
   <section class="card panel" id="result">
     <div id="resultPanel">
       <div class="dish-head">
@@ -284,27 +260,27 @@
 
       <div class="cols">
         <div class="box uses">
-          <h3>🥗 From your kitchen</h3>
+          <h3>🥗 Din ce ai tu</h3>
           <ul class="ing-list" id="usesList"></ul>
         </div>
         <div class="box extras">
-          <h3>🛒 You'll also want</h3>
+          <h3>🛒 Ce îți mai recomand</h3>
           <ul class="ing-list" id="extrasList"></ul>
         </div>
       </div>
 
-      <p class="steps-title">👩‍🍳 How to make it</p>
+      <p class="steps-title">👩‍🍳 Cum se prepară</p>
       <ol class="steps" id="stepsList"></ol>
 
       <div class="result-foot">
-        <button class="again" id="againBtn">🔄 Another idea</button>
-        <button id="printBtn">🖨️ Print recipe</button>
+        <button class="again" id="againBtn">🔄 Altă idee</button>
+        <button id="printBtn">🖨️ Printează rețeta</button>
       </div>
     </div>
   </section>
 
   <footer>
-    Made with <span class="heart">♥</span> and a well-stocked fridge · Recipes are AI-generated — use your judgement on cooking times, allergens &amp; food safety.
+    Făcut cu <span class="heart">♥</span> și un frigider bine aprovizionat · Rețetele sunt generate de inteligență artificială — verifică singur timpii de gătire, alergenii și siguranța alimentară.
   </footer>
 </div>
 
@@ -312,27 +288,32 @@
 (function(){
   "use strict";
 
-  // ---------- State ----------
+  // ---------- Stare ----------
   var ingredients = [];
+  var meal = "prânz";
   var busy = false;
-  var LS_KEY = "fridgechef.apiKey";
-  var LS_MODEL = "fridgechef.model";
-  var DEFAULT_MODEL = "claude-sonnet-5";
 
-  // ---------- Elements ----------
+  // ---------- Elemente ----------
   var $ = function(id){ return document.getElementById(id); };
+  var mealRow = $("mealRow");
   var chipField = $("chipField"), ingInput = $("ingInput");
   var cookBtn = $("cookBtn"), surpriseBtn = $("surpriseBtn"), clearBtn = $("clearBtn");
-  var settingsToggle = $("settingsToggle"), settings = $("settings");
-  var apiKeyInput = $("apiKey"), modelInput = $("modelName"), saveKeyBtn = $("saveKey"), keyStatus = $("keyStatus");
   var notice = $("notice"), loader = $("loader"), loaderText = $("loaderText"), result = $("result");
   var dishBadges = $("dishBadges"), dishName = $("dishName"), dishBlurb = $("dishBlurb");
   var usesList = $("usesList"), extrasList = $("extrasList"), stepsList = $("stepsList");
   var againBtn = $("againBtn"), printBtn = $("printBtn");
 
-  // ---------- Ingredient chips ----------
+  // ---------- Selector masă ----------
+  mealRow.addEventListener("click", function(e){
+    var btn = e.target.closest(".meal-opt");
+    if(!btn) return;
+    mealRow.querySelectorAll(".meal-opt").forEach(function(b){ b.classList.remove("active"); });
+    btn.classList.add("active");
+    meal = btn.getAttribute("data-meal");
+  });
+
+  // ---------- Ingrediente (etichete) ----------
   function renderChips(){
-    // remove existing chips (keep the input)
     var chips = chipField.querySelectorAll(".chip");
     chips.forEach(function(c){ c.remove(); });
     ingredients.forEach(function(name, i){
@@ -342,7 +323,7 @@
       label.textContent = name;
       var x = document.createElement("button");
       x.type = "button";
-      x.setAttribute("aria-label", "Remove " + name);
+      x.setAttribute("aria-label", "Elimină " + name);
       x.textContent = "×";
       x.addEventListener("click", function(){ ingredients.splice(i,1); renderChips(); });
       chip.appendChild(label);
@@ -387,37 +368,7 @@
     ingInput.focus();
   });
 
-  // ---------- Settings ----------
-  settingsToggle.addEventListener("click", function(){ settings.classList.toggle("open"); });
-
-  function loadSettings(){
-    var k = "";
-    var m = "";
-    try { k = localStorage.getItem(LS_KEY) || ""; m = localStorage.getItem(LS_MODEL) || ""; } catch(e){}
-    if(k){ apiKeyInput.value = k; setKeyStatus(true); }
-    modelInput.value = m || DEFAULT_MODEL;
-  }
-  function setKeyStatus(ok){
-    if(ok){ keyStatus.textContent = "✓ Using your Anthropic key"; keyStatus.className = "key-status ok"; }
-    else { keyStatus.textContent = "Using the free AI service"; keyStatus.className = "key-status no"; }
-  }
-  saveKeyBtn.addEventListener("click", function(){
-    var k = apiKeyInput.value.trim();
-    var m = modelInput.value.trim() || DEFAULT_MODEL;
-    try {
-      if(k) localStorage.setItem(LS_KEY, k); else localStorage.removeItem(LS_KEY);
-      localStorage.setItem(LS_MODEL, m);
-    } catch(e){}
-    modelInput.value = m;
-    setKeyStatus(!!k);
-    showNotice("warn", "Settings saved. " + (k ? "Your Anthropic key will be used." : "Using the free AI service — no key needed."));
-    setTimeout(function(){ hide(notice); }, 2200);
-  });
-
-  function getKey(){ try { return (localStorage.getItem(LS_KEY) || apiKeyInput.value || "").trim(); } catch(e){ return (apiKeyInput.value||"").trim(); } }
-  function getModel(){ try { return (localStorage.getItem(LS_MODEL) || modelInput.value || DEFAULT_MODEL).trim(); } catch(e){ return DEFAULT_MODEL; } }
-
-  // ---------- UI helpers ----------
+  // ---------- Ajutoare interfață ----------
   function show(el){ el.classList.add("show"); }
   function hide(el){ el.classList.remove("show"); }
   function showNotice(kind, html){
@@ -430,15 +381,15 @@
     if(state){
       hide(result); hide(notice);
       loaderText.innerHTML = (surprise
-        ? "Dreaming up something inventive"
-        : "Rummaging through your fridge") + '<span class="dots"></span>';
+        ? "Inventez ceva creativ"
+        : "Caut prin frigider") + '<span class="dots"></span>';
       show(loader);
     } else {
       hide(loader);
     }
   }
 
-  // ---------- Prompt building ----------
+  // ---------- Construirea cererii ----------
   function buildPrompt(surprise){
     var list = ingredients.slice();
     var typed = ingInput.value.trim();
@@ -446,55 +397,49 @@
     var ingStr = list.join(", ");
 
     var creativity = surprise
-      ? "Be bold and imaginative: propose an unexpected, exciting dish — think fusion twists, restaurant-style plating, or a creative combination the cook might never have tried. Still keep it genuinely cookable at home."
-      : "Suggest one practical, reliable, genuinely tasty dish that a home cook can make with minimal fuss.";
+      ? "Fii îndrăzneț și creativ: propune un fel neașteptat și interesant — combinații fusion, o prezentare ca la restaurant sau o idee pe care poate nu a mai încercat-o. Totuși, trebuie să poată fi gătit acasă."
+      : "Propune un fel practic, sigur și cu adevărat gustos, pe care oricine îl poate face acasă fără bătăi de cap.";
 
     return [
-      "You are Fridge Chef, a friendly, practical recipe assistant.",
-      "The cook has these ingredients on hand: " + ingStr + ".",
+      "Ești „Bucătarul din Frigider”, un asistent culinar prietenos și practic.",
+      "Răspunde EXCLUSIV în limba română.",
+      "Persoana are aceste ingrediente la îndemână: " + ingStr + ".",
+      "Felul trebuie să fie potrivit pentru: " + meal + ".",
       creativity,
-      "Rules:",
-      "- Use MOSTLY the ingredients listed. It's fine to assume basic staples (salt, pepper, oil, water, butter) are available.",
-      "- Any additional items that are NOT in their list must go in \"extras\" and be kept short.",
-      "- Give clear, numbered, beginner-friendly steps.",
-      "Respond with ONLY a JSON object (no markdown, no commentary) with EXACTLY these keys:",
+      "Reguli:",
+      "- Folosește în MARE PARTE ingredientele din listă. Poți presupune că sunt disponibile lucruri de bază (sare, piper, ulei, apă, unt).",
+      "- Orice ingrediente suplimentare care NU sunt în listă trebuie puse în „extras” și ținute pe scurt.",
+      "- Dă instrucțiuni clare, numerotate, ușor de urmat de un începător.",
+      "Răspunde DOAR cu un obiect JSON (fără markdown, fără alt text) cu EXACT aceste chei:",
       "{",
-      '  "dishName": string,',
-      '  "blurb": string (one short, appetising sentence),',
-      '  "time": string (e.g. "about 25 min"),',
-      '  "serves": string (e.g. "Serves 2"),',
-      '  "usesIngredients": string[] (the items from their list this dish actually uses),',
-      '  "extras": string[] (extra items they would need to buy/find; empty array if none beyond basic staples),',
-      '  "steps": string[] (clear step-by-step instructions, one action per item)',
+      '  "dishName": string (numele felului, în română),',
+      '  "blurb": string (o singură frază scurtă și apetisantă),',
+      '  "time": string (timpul de pregătire, ex: "aprox. 25 min"),',
+      '  "serves": string (ex: "2 porții"),',
+      '  "usesIngredients": string[] (ingredientele din lista lor pe care le folosește felul),',
+      '  "extras": string[] (ce ar mai trebui să cumpere/folosească; listă goală dacă nu e nevoie de nimic în plus față de cele de bază),',
+      '  "steps": string[] (instrucțiuni pas cu pas, o singură acțiune pe element)',
       "}"
     ].join("\n");
   }
 
-  // ---------- AI call ----------
-  // Priority:
-  //   1. In-artifact runtime (window.claude.complete) if present — no key.
-  //   2. The user's own Anthropic key, if they saved one (higher quality).
-  //   3. A free, keyless AI service (Pollinations) — the default, no setup.
+  // ---------- Apel AI (gratuit, fără configurare) ----------
+  // Folosește motorul din aplicație dacă există, altfel un serviciu AI gratuit.
   function askAI(prompt, surprise){
     if(window.claude && typeof window.claude.complete === "function"){
       return window.claude.complete(prompt);
     }
-    if(getKey()){
-      return askAnthropic(prompt, surprise);
-    }
     return askFree(prompt, surprise);
   }
 
-  // Free, keyless service (OpenAI-compatible). Falls back to a plain GET if POST fails.
   function askFree(prompt, surprise){
-    var seed = Math.floor(Math.random() * 1e9);
     var payload = {
       model: "openai",
-      seed: seed,
+      seed: Math.floor(Math.random() * 1e9),
       temperature: surprise ? 1 : 0.6,
-      referrer: "fridge-chef",
+      referrer: "bucatarul-din-frigider",
       messages: [
-        { role: "system", content: "You are Fridge Chef. Always answer with a single valid JSON object and nothing else." },
+        { role: "system", content: "Ești „Bucătarul din Frigider”. Răspunzi mereu în limba română, cu un singur obiect JSON valid și nimic altceva." },
         { role: "user", content: prompt }
       ]
     };
@@ -503,70 +448,31 @@
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload)
     }).then(function(res){
-      if(!res.ok){ throw { kind: "api", message: "Free AI service returned HTTP " + res.status }; }
+      if(!res.ok){ throw { kind: "api", message: "Serviciul a răspuns cu codul " + res.status }; }
       return res.text();
     }).then(function(raw){
-      // Response may be OpenAI-style JSON, or plain text depending on the model.
       try {
         var data = JSON.parse(raw);
         if(data && data.choices && data.choices[0] && data.choices[0].message){
           return data.choices[0].message.content || raw;
         }
-        if(data && (data.dishName || data.steps)) return raw; // already the recipe object
-      } catch(e){ /* not JSON envelope — treat as text */ }
+        if(data && (data.dishName || data.steps)) return raw;
+      } catch(e){ /* text simplu */ }
       return raw;
     }).catch(function(err){
-      // Network/CORS or parse — try the simple GET endpoint as a fallback.
       if(err && err.kind === "api") throw err;
       var url = "https://text.pollinations.ai/" + encodeURIComponent(prompt) +
-                "?model=openai&seed=" + Math.floor(Math.random() * 1e9) + "&referrer=fridge-chef";
+                "?model=openai&seed=" + Math.floor(Math.random() * 1e9) + "&referrer=bucatarul-din-frigider";
       return fetch(url).then(function(r){
-        if(!r.ok){ throw { kind: "api", message: "Free AI service returned HTTP " + r.status }; }
+        if(!r.ok){ throw { kind: "api", message: "Serviciul a răspuns cu codul " + r.status }; }
         return r.text();
-      });
-    });
-  }
-
-  // Optional: the user's own Anthropic key.
-  function askAnthropic(prompt, surprise){
-    var body = {
-      model: getModel(),
-      max_tokens: 1200,
-      temperature: surprise ? 1 : 0.6,
-      messages: [
-        { role: "user", content: prompt },
-        { role: "assistant", content: "{" } // prefill to force clean JSON
-      ]
-    };
-    return fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": getKey(),
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify(body)
-    }).then(function(res){
-      return res.json().then(function(data){
-        if(!res.ok){
-          var msg = (data && data.error && data.error.message) ? data.error.message : ("HTTP " + res.status);
-          throw { kind: "api", message: msg };
-        }
-        var text = "";
-        if(data.content && data.content.length){
-          data.content.forEach(function(b){ if(b.type === "text") text += b.text; });
-        }
-        return "{" + text; // we prefilled "{"
       });
     });
   }
 
   function parseRecipe(text){
     if(typeof text !== "string") throw new Error("bad");
-    // Strip code fences if the model added them.
     var t = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-    // Grab the outermost JSON object.
     var start = t.indexOf("{");
     var end = t.lastIndexOf("}");
     if(start !== -1 && end !== -1 && end > start){
@@ -581,25 +487,36 @@
     return [String(v)];
   }
 
-  // ---------- Render recipe ----------
+  function capitalize(s){ s = String(s||"").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  // ---------- Afișare rețetă ----------
   function renderRecipe(r, surprise){
     dishBadges.innerHTML = "";
     if(surprise){
-      var b = document.createElement("span");
-      b.className = "badge surprise";
-      b.textContent = "✨ Surprise pick";
-      dishBadges.appendChild(b);
+      var bs = document.createElement("span");
+      bs.className = "badge surprise";
+      bs.textContent = "✨ Idee creativă";
+      dishBadges.appendChild(bs);
     }
-    [r.time, r.serves].forEach(function(m){
-      if(m && String(m).trim()){
-        var span = document.createElement("span");
-        span.className = "badge meta";
-        span.textContent = String(m).trim();
-        dishBadges.appendChild(span);
-      }
-    });
+    var bm = document.createElement("span");
+    bm.className = "badge meal";
+    bm.textContent = "🍴 " + capitalize(meal);
+    dishBadges.appendChild(bm);
 
-    dishName.textContent = r.dishName || "A tasty idea";
+    if(r.time && String(r.time).trim()){
+      var bt = document.createElement("span");
+      bt.className = "badge time";
+      bt.textContent = "⏱️ " + String(r.time).trim();
+      dishBadges.appendChild(bt);
+    }
+    if(r.serves && String(r.serves).trim()){
+      var bp = document.createElement("span");
+      bp.className = "badge meta";
+      bp.textContent = "🍽️ " + String(r.serves).trim();
+      dishBadges.appendChild(bp);
+    }
+
+    dishName.textContent = r.dishName || "O idee gustoasă";
     dishBlurb.textContent = r.blurb || "";
     dishBlurb.style.display = r.blurb ? "" : "none";
 
@@ -625,7 +542,7 @@
       });
     }
     fill(usesList, r.usesIngredients, "●", "—");
-    fill(extrasList, r.extras, "＋", "Nothing — just kitchen basics! 🎉");
+    fill(extrasList, r.extras, "＋", "Nimic — doar lucruri de bază din bucătărie! 🎉");
 
     stepsList.innerHTML = "";
     asArray(r.steps).forEach(function(step){
@@ -638,14 +555,13 @@
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // ---------- Main flow ----------
+  // ---------- Flux principal ----------
   function cook(surprise){
     if(busy) return;
-    // capture any half-typed ingredient
     if(ingInput.value.trim()) addIngredient(ingInput.value);
 
     if(!ingredients.length){
-      showNotice("warn", "🧺 Add a few ingredients first, then I'll find you something to cook.");
+      showNotice("warn", "🧺 Adaugă mai întâi câteva ingrediente, apoi îți găsesc ceva de gătit.");
       ingInput.focus();
       return;
     }
@@ -663,13 +579,13 @@
         setBusy(false);
         err = err || {};
         if(err.kind === "parse"){
-          showNotice("err", "🤔 The AI replied, but I couldn't read the recipe. Please try again.");
+          showNotice("err", "🤔 Am primit un răspuns, dar nu am putut citi rețeta. Mai încearcă o dată.");
         } else if(err.kind === "api"){
-          showNotice("err", "<b>AI service error:</b> " + escapeHtml(err.message) + "<br>Please try again in a moment.");
+          showNotice("err", "<b>A apărut o eroare:</b> " + escapeHtml(err.message) + "<br>Te rog încearcă din nou peste câteva momente.");
         } else if(err instanceof TypeError){
-          showNotice("err", "🌐 Couldn't reach the AI service. Check your internet connection and try again.");
+          showNotice("err", "🌐 Nu am reușit să ajung la serviciu. Verifică-ți conexiunea la internet și încearcă din nou.");
         } else {
-          showNotice("err", "Something went wrong. Please try again.");
+          showNotice("err", "Ceva n-a mers. Te rog încearcă din nou.");
         }
       });
   }
@@ -680,17 +596,12 @@
     });
   }
 
-  cookBtn.addEventListener("click", function(){ cook(false); });
-  surpriseBtn.addEventListener("click", function(){ cook(true); });
+  cookBtn.addEventListener("click", function(){ againBtn.dataset.surprise = ""; cook(false); });
+  surpriseBtn.addEventListener("click", function(){ againBtn.dataset.surprise = "1"; cook(true); });
   againBtn.addEventListener("click", function(){ cook(!!againBtn.dataset.surprise); });
   printBtn.addEventListener("click", function(){ window.print(); });
 
-  // track last mode for the "Another idea" button
-  cookBtn.addEventListener("click", function(){ againBtn.dataset.surprise = ""; });
-  surpriseBtn.addEventListener("click", function(){ againBtn.dataset.surprise = "1"; });
-
   // ---------- Init ----------
-  loadSettings();
   renderChips();
   ingInput.focus();
 })();
