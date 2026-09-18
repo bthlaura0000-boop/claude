@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bucătarul din Frigider — se pregătește…</title>
+<style>
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    background:linear-gradient(180deg,#fbf3e9,#f6e7d4);
+    color:#3a2c22;display:grid;place-items:center;text-align:center;
+  }
+  .b{max-width:420px;padding:24px;}
+  .pan{font-size:56px;display:inline-block;animation:sizzle .9s ease-in-out infinite;}
+  @keyframes sizzle{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-4px)}}
+  h1{font-size:20px;margin:14px 0 6px;}
+  p{color:#8a7663;font-size:14px;margin:0;}
+  a{color:#cf4a24;font-weight:700;}
+</style>
+<script>
+// Fișier de pornire cu URL nou (negăsit în cache) => se încarcă mereu proaspăt.
+// Curăță orice service worker/cache vechi, apoi trece la aplicația reală.
+(function(){
+  var go = function(){ window.location.replace("index.html?v=" + Date.now()); };
+  var jobs = [];
+  try {
+    if("serviceWorker" in navigator && navigator.serviceWorker.getRegistrations){
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(r){ return r.unregister(); }));
+      }).catch(function(){}));
+    }
+    if(window.caches && caches.keys){
+      jobs.push(caches.keys().then(function(keys){
+        return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+      }).catch(function(){}));
+    }
+  } catch(e){}
+  if(jobs.length){ Promise.all(jobs).then(go, go); setTimeout(go, 1500); }
+  else { go(); }
+})();
+</script>
+</head>
+<body>
+  <div class="b">
+    <span class="pan">🍳</span>
+    <h1>Se pregătește Bucătarul din Frigider…</h1>
+    <p>Dacă nu se deschide singur, apasă aici: <a href="index.html">deschide aplicația</a></p>
+  </div>
+</body>
+</html>
