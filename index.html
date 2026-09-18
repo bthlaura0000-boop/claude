@@ -997,7 +997,7 @@ function transToKey(code){ return code ? (TRANS_TO_KEY[String(code).toLowerCase(
 // OCR engine (browser vs cloud) + optional key
 (function initOcrEngine(){
   const sel = $("ocrEngine"), keyIn = $("ocrKey");
-  sel.value = localStorage.getItem("cf_ocr_engine") || "browser";
+  sel.value = localStorage.getItem("cf_ocr_engine") || "cloud";
   keyIn.value = localStorage.getItem("cf_ocr_key") || "";
   const upd = () => { keyIn.style.display = sel.value === "cloud" ? "" : "none"; };
   upd();
