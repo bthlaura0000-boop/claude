@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9ec4"/>
+      <stop offset=".38" stop-color="#b28dff"/>
+      <stop offset=".7" stop-color="#5eb0ff"/>
+      <stop offset="1" stop-color="#4fd1a5"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#gm)"/>
+  <!-- content kept within the central safe zone (~62%) for maskable icons -->
+  <g transform="translate(256 268) scale(0.78)">
+    <path d="M-150 -72 C -110 -102, -30 -102, 0 -76 C 30 -102, 110 -102, 150 -72 L 150 90 C 110 64, 30 64, 0 90 C -30 64, -110 64, -150 90 Z"
+          fill="#ffffff" opacity="0.97"/>
+    <path d="M0 -76 L0 90" stroke="#d9cff0" stroke-width="7"/>
+    <g stroke="#b9a7e8" stroke-width="7" stroke-linecap="round">
+      <path d="M-120 -50 H-30"/><path d="M-120 -22 H-30"/><path d="M-120 6 H-30"/><path d="M-120 34 H-42"/>
+      <path d="M30 -50 H120"/><path d="M30 -22 H120"/><path d="M30 6 H120"/><path d="M42 34 H120"/>
+    </g>
+  </g>
+</svg>
