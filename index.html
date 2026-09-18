@@ -554,6 +554,34 @@
 
   /* Cropbox contrast stays fine on dark */
   body.theme-dark .cropbox{ box-shadow:0 0 0 9999px rgba(4,7,20,.5); }
+
+  /* =======================================================
+     SMOOTH THEME TRANSITION
+     ======================================================= */
+  /* Color fade applied only during a switch (added/removed by JS)
+     so it never fires on load or during other interactions. */
+  .theme-anim, .theme-anim *{
+    transition:
+      background-color .55s ease,
+      color .5s ease,
+      border-color .5s ease,
+      box-shadow .5s ease,
+      fill .5s ease !important;
+  }
+  .theme-anim .tt-thumb{ transition:transform .45s cubic-bezier(.2,.85,.2,1), background .45s !important; }
+  .theme-anim .tt-track{ transition:background .55s ease !important; }
+
+  /* Cinematic circular reveal from the toggle (View Transitions API) */
+  @supports (view-transition-name: root){
+    ::view-transition-old(root),
+    ::view-transition-new(root){ animation:none; mix-blend-mode:normal; }
+    ::view-transition-old(root){ z-index:1; }
+    ::view-transition-new(root){ z-index:2; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .theme-anim, .theme-anim *{ transition-duration:.001ms !important; }
+  }
 </style>
 </head>
 <body>
@@ -1649,11 +1677,37 @@ $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey
   }
   applyTheme(savedTheme === "dark" ? "dark" : "light");
 
-  if (themeBtn) themeBtn.addEventListener("click", () => {
-    const nowDark = !document.body.classList.contains("theme-dark");
-    applyTheme(nowDark ? "dark" : "light");
-    try { localStorage.setItem("cf_theme", nowDark ? "dark" : "light"); } catch(_) {}
-  });
+  function persistTheme(mode){ try { localStorage.setItem("cf_theme", mode); } catch(_) {} }
+
+  function switchTheme(){
+    const mode = document.body.classList.contains("theme-dark") ? "light" : "dark";
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Cinematic circular reveal expanding from the toggle button
+    if (document.startViewTransition && !reduce && themeBtn) {
+      const r = themeBtn.getBoundingClientRect();
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      const vt = document.startViewTransition(() => { applyTheme(mode); persistTheme(mode); });
+      vt.ready.then(() => {
+        document.documentElement.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] },
+          { duration: 640, easing: "cubic-bezier(.3,.7,.2,1)", pseudoElement: "::view-transition-new(root)" }
+        );
+      }).catch(() => {});
+      return;
+    }
+
+    // Fallback: smooth color fade across the whole UI
+    if (!reduce) {
+      document.body.classList.add("theme-anim");
+      setTimeout(() => document.body.classList.remove("theme-anim"), 680);
+    }
+    applyTheme(mode);
+    persistTheme(mode);
+  }
+
+  if (themeBtn) themeBtn.addEventListener("click", switchTheme);
 
   /* ---------- Cinematic intro ---------- */
   const intro = document.getElementById("intro");
