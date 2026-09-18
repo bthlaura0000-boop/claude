@@ -392,6 +392,169 @@
     body::before,.intro-aurora,.intro-stars{animation:none !important;}
   }
 </style>
+<!-- ============ PREMIUM BUTTONS + DAY/NIGHT THEME ============ -->
+<style>
+  /* =======================================================
+     PREMIUM, INTUITIVE BUTTONS (both themes)
+     ======================================================= */
+  button{
+    border-radius:14px;
+    font-weight:600;
+    letter-spacing:.2px;
+    line-height:1;
+    gap:9px;
+  }
+  /* Rounded "pill" action buttons — friendlier, more premium tap targets */
+  #pickBtn,#camBtn,#demoBtn,#extractBtn,#translateBtn,#clearBtn,
+  #retransBtn,#playBtn,#pauseBtn,#stopBtn,#printBtn,#saveKey{
+    border-radius:100px;
+    padding:13px 22px;
+  }
+  /* Clear primary action emphasis */
+  #translateBtn{ padding:14px 26px; font-size:16px; font-weight:700; }
+  #extractBtn{ font-weight:700; }
+  /* Icon-only viewer buttons: perfectly round, roomy */
+  .zbtn{ border-radius:14px; }
+  #zoomIn,#zoomOut,#zoomReset{ width:44px;height:44px;justify-content:center;padding:0;border-radius:50%; }
+  /* Keyboard accessibility: obvious focus ring */
+  button:focus-visible{ outline:3px solid var(--sky-deep); outline-offset:3px; }
+  /* Clearer disabled affordance */
+  button:disabled{ opacity:.42; filter:grayscale(.45); box-shadow:0 3px 0 rgba(0,0,0,.06); }
+  /* Icon inside buttons lifts subtly on hover for a tactile feel */
+  button:not(:disabled):hover{ filter:brightness(1.06) saturate(1.05); }
+
+  /* =======================================================
+     DAY / NIGHT THEME TOGGLE (switch-style, in header)
+     ======================================================= */
+  .theme-toggle{
+    position:absolute; top:16px; right:16px; z-index:6;
+    display:inline-flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.65); color:var(--ink);
+    border:1px solid rgba(255,255,255,.9);
+    border-radius:100px; padding:6px 14px 6px 6px;
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;
+    box-shadow:0 8px 22px rgba(120,90,180,.18);
+    backdrop-filter:blur(10px);
+    cursor:pointer; transition:transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s, background .3s;
+  }
+  .theme-toggle:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(120,90,180,.26); }
+  .theme-toggle:active{ transform:translateY(0); }
+  .theme-toggle:focus-visible{ outline:3px solid var(--sky-deep); outline-offset:3px; }
+  .tt-track{
+    width:46px; height:26px; border-radius:100px; position:relative; flex:0 0 auto;
+    background:linear-gradient(135deg,#ffd98a,#ffb703);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.2); transition:background .4s;
+  }
+  .tt-thumb{
+    position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%;
+    background:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;
+    box-shadow:0 2px 6px rgba(0,0,0,.25); transition:transform .4s cubic-bezier(.2,.8,.2,1);
+  }
+  @media(max-width:560px){ .theme-toggle .tt-label{display:none;} .theme-toggle{padding:6px;} }
+
+  /* =======================================================
+     NIGHT THEME
+     ======================================================= */
+  body.theme-dark{ color:#e9e7f5; }
+  body.theme-dark{
+    background:linear-gradient(180deg,#0b1030 0%,#080c24 52%,#0a1130 100%) !important;
+  }
+  body.theme-dark::before{ opacity:.55; }
+
+  /* Toggle visual in dark mode */
+  body.theme-dark .theme-toggle{
+    background:rgba(30,36,66,.7); color:#e9e7f5; border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 10px 26px rgba(0,0,0,.45);
+  }
+  body.theme-dark .tt-track{ background:linear-gradient(135deg,#3a3f7a,#5661b0); }
+  body.theme-dark .tt-thumb{ transform:translateX(20px); background:#eef1ff; }
+
+  /* Cards / surfaces */
+  body.theme-dark .card{
+    background:rgba(28,34,64,.66) !important;
+    border:1px solid rgba(255,255,255,.10) !important;
+    box-shadow:0 16px 48px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07) !important;
+  }
+  body.theme-dark header.hero{
+    background:linear-gradient(135deg,rgba(38,44,82,.82),rgba(18,23,50,.6)) !important;
+    border:1px solid rgba(255,255,255,.12) !important;
+    box-shadow:0 24px 66px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.09) !important;
+  }
+  body.theme-dark .layout>.card:hover{ box-shadow:0 26px 66px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08) !important; }
+
+  /* Text colors */
+  body.theme-dark .tagline,
+  body.theme-dark .hint,
+  body.theme-dark .engine-card label,
+  body.theme-dark .ocr-options label,
+  body.theme-dark .dropzone p,
+  body.theme-dark .stage .placeholder,
+  body.theme-dark footer{ color:#aca6ce; }
+  body.theme-dark .dropzone h3,
+  body.theme-dark .section-title{ color:#ecebff; }
+  body.theme-dark .hint a{ color:#9fd0ff; }
+
+  /* Inputs, selects, textarea */
+  body.theme-dark input,
+  body.theme-dark select,
+  body.theme-dark textarea.ocr-edit{
+    background:#141935 !important; color:#e9e7f5 !important; border-color:rgba(255,255,255,.16) !important;
+  }
+  body.theme-dark input::placeholder,
+  body.theme-dark textarea.ocr-edit::placeholder{ color:#8b86ad; }
+  body.theme-dark input:focus,
+  body.theme-dark select:focus,
+  body.theme-dark textarea.ocr-edit:focus{ box-shadow:0 0 0 4px rgba(94,176,255,.28); }
+  body.theme-dark .ocr-options{
+    background:linear-gradient(135deg,#12183a,#122340) !important; border-color:rgba(255,255,255,.12) !important;
+  }
+
+  /* Dropzone */
+  body.theme-dark .dropzone{
+    background:linear-gradient(180deg,#151a38,#12163190) !important;
+    border-color:var(--lav-deep) !important;
+  }
+
+  /* Viewer / stage */
+  body.theme-dark .viewer-toolbar{ background:linear-gradient(90deg,#15204c,#123a38) !important; }
+  body.theme-dark .zbtn{ background:#1b2244 !important; color:#e9e7f5 !important; }
+  body.theme-dark .zbtn#cropBtn.active{ background:var(--pink-deep) !important; color:#fff !important; }
+  body.theme-dark .zlabel{ background:rgba(255,255,255,.10); color:#e9e7f5; }
+  body.theme-dark .stage{ background:repeating-conic-gradient(#141a3c 0% 25%, #191f44 0% 50%) 50%/26px 26px; }
+
+  /* Story + parallel + OCR editor */
+  body.theme-dark .story{
+    background:linear-gradient(180deg,#171d3e,#141834) !important;
+    border-color:rgba(255,207,77,.4) !important;
+    box-shadow:inset 0 2px 12px rgba(0,0,0,.35) !important;
+  }
+  body.theme-dark .story.no{ border-color:rgba(94,176,255,.45) !important; }
+  body.theme-dark .col-title.no{ color:#8fc7ff; }
+  body.theme-dark .col-title.ro{ color:#ff9fc2; }
+
+  /* Tabs */
+  body.theme-dark .mode-btn{ background:#181e40; color:#aca6ce; border-color:rgba(255,255,255,.14); }
+  body.theme-dark .mode-btn.active{ color:#fff; }
+
+  /* Vocabulary table */
+  body.theme-dark table.vocab{ border-color:rgba(94,176,255,.4); }
+  body.theme-dark table.vocab td{ border-top-color:rgba(255,255,255,.08); color:#e4e2f6; }
+  body.theme-dark table.vocab tr:nth-child(even) td{ background:rgba(255,255,255,.035); }
+
+  /* Cultural term cards */
+  body.theme-dark .term{
+    background:linear-gradient(135deg,#171d3e,#10263c) !important; border-color:rgba(79,209,165,.4) !important;
+  }
+  body.theme-dark .term p{ color:#b7b1d6; }
+  body.theme-dark .term b{ color:#5fe6b8; }
+
+  /* Audio speed pill + ghost/zoom buttons */
+  body.theme-dark .audio-bar .speed{ background:#151a38; border-color:rgba(79,209,165,.4); color:#e9e7f5; }
+  body.theme-dark .btn-ghost{ background:#1b2244 !important; color:#e9e7f5 !important; border-color:rgba(255,255,255,.18) !important; }
+
+  /* Cropbox contrast stays fine on dark */
+  body.theme-dark .cropbox{ box-shadow:0 0 0 9999px rgba(4,7,20,.5); }
+</style>
 </head>
 <body>
 <!-- ============ CINEMATIC START SCREEN ============ -->
@@ -412,6 +575,10 @@
 <div class="wrap">
 
   <header class="hero">
+    <button id="themeToggle" class="theme-toggle" type="button" title="Comută între tema de zi și de noapte" aria-label="Comută tema zi/noapte">
+      <span class="tt-track"><span class="tt-thumb">🌙</span></span>
+      <span class="tt-label">Noapte</span>
+    </button>
     <span class="blob" style="left:4%;top:10%;">⭐</span>
     <span class="blob" style="right:6%;top:16%;animation-delay:1s;">🌈</span>
     <span class="blob" style="left:10%;bottom:6%;animation-delay:2s;">🐻</span>
@@ -1460,6 +1627,35 @@ $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey
 <script>
 (function(){
   "use strict";
+
+  /* ---------- Day / Night theme (applied early, before intro lifts) ---------- */
+  const themeBtn = document.getElementById("themeToggle");
+  const ttLabel = themeBtn ? themeBtn.querySelector(".tt-label") : null;
+  const ttThumb = themeBtn ? themeBtn.querySelector(".tt-thumb") : null;
+
+  function applyTheme(mode){
+    const dark = mode === "dark";
+    document.body.classList.toggle("theme-dark", dark);
+    if (ttLabel) ttLabel.textContent = dark ? "Zi" : "Noapte";
+    if (ttThumb) ttThumb.textContent = dark ? "☀️" : "🌙";
+    if (themeBtn) themeBtn.setAttribute("aria-pressed", String(dark));
+    if (themeBtn) themeBtn.title = dark ? "Treci la tema de zi ☀️" : "Treci la tema de noapte 🌙";
+  }
+  // initial theme: saved choice, else follow the OS preference
+  let savedTheme = null;
+  try { savedTheme = localStorage.getItem("cf_theme"); } catch(_) {}
+  if (!savedTheme && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    savedTheme = "dark";
+  }
+  applyTheme(savedTheme === "dark" ? "dark" : "light");
+
+  if (themeBtn) themeBtn.addEventListener("click", () => {
+    const nowDark = !document.body.classList.contains("theme-dark");
+    applyTheme(nowDark ? "dark" : "light");
+    try { localStorage.setItem("cf_theme", nowDark ? "dark" : "light"); } catch(_) {}
+  });
+
+  /* ---------- Cinematic intro ---------- */
   const intro = document.getElementById("intro");
   const startBtn = document.getElementById("introStart");
   const starsBox = document.getElementById("introStars");
