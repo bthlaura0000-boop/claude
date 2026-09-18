@@ -474,6 +474,25 @@
   .page-thumb.done .pt-status{ color:var(--mint-deep); }
 
   /* =======================================================
+     PARENTS' HOW-TO GUIDE
+     ======================================================= */
+  .help-card{ margin-top:18px; }
+  .help-card summary{
+    cursor:pointer; list-style:none; font-family:'Fredoka',sans-serif; font-weight:700;
+    font-size:18px; color:var(--ink); display:flex; align-items:center; gap:8px;
+  }
+  .help-card summary::-webkit-details-marker{ display:none; }
+  .help-card summary::before{ content:"❓"; }
+  .help-card summary::after{ content:"▾"; margin-left:auto; transition:transform .25s; }
+  .help-card details[open] summary::after{ transform:rotate(180deg); }
+  .help-body{ margin-top:12px; line-height:1.75; }
+  .help-body ol{ padding-left:22px; margin:6px 0; }
+  .help-body li{ margin:7px 0; }
+  .help-tips{ background:linear-gradient(135deg,#fffdf4,#fff); border:2px solid var(--sun); border-radius:14px; padding:12px 14px; margin:12px 0; }
+  .help-actions{ margin-top:6px; }
+  body.theme-dark .help-tips{ background:#171d3e; border-color:rgba(255,207,77,.4); }
+
+  /* =======================================================
      DAY / NIGHT THEME TOGGLE (switch-style, in header)
      ======================================================= */
   .install-btn{
@@ -850,6 +869,27 @@
     </div>
   </div>
 
+  <!-- Parents' how-to guide -->
+  <div class="card help-card no-print">
+    <details>
+      <summary>Cum se folosește — ghid pentru părinți</summary>
+      <div class="help-body">
+        <ol>
+          <li><b>Alege limbile:</b> „Limba cărții" (din ce e scrisă) și „Tradu în". Poți lăsa <b>🔎 Detectează automat</b> dacă nu ești sigur(ă).</li>
+          <li><b>Adaugă paginile:</b> apasă <b>🖼️ Alege imagini</b> sau <b>📷 Fă o poză</b>. Poți selecta mai multe deodată și poți adăuga în mai multe reprize.</li>
+          <li><b>Traduce:</b> apasă <b>🪄 Extrage + Tradu</b> pentru pagina curentă, sau <b>🪄 Tradu toate paginile</b> pentru toată cartea.</li>
+          <li><b>Verifică textul:</b> în fila „Text OCR" poți corecta greșelile de citire, apoi <b>🔁 Retradu textul corectat</b>.</li>
+          <li><b>Ascultă:</b> <b>▶️ Citește</b> o pagină sau <b>📖🔊 Citește toată cartea</b>. La vocabular, 🔊 pronunță cuvântul în limba originală.</li>
+          <li><b>Păstrează:</b> <b>💾 Salvează traducerea</b> (fișier de păstrat) sau <b>🖨️ Printează cartea</b>.</li>
+        </ol>
+        <p class="help-tips">💡 Sfaturi: fă poze clare, drepte și bine luminate. Pentru text mai greu, folosește <b>✂️ Selectează text</b> ca să lași afară desenele. Prima traducere pe internet pregătește aplicația și pentru offline.</p>
+        <div class="help-actions">
+          <button class="btn-ghost" id="dlIconsBtn" type="button" title="Descarcă iconițe PNG (utile dacă vrei mai târziu s-o publici în magazin)">🎨 Descarcă iconițe PNG</button>
+        </div>
+      </div>
+    </details>
+  </div>
+
   <footer>
     Făcut cu <span class="heart">♥</span> pentru micii cititori curioși &middot; Cartea Fermecată &middot;
     <span class="badge">1 fișier HTML · fără cheie API</span>
@@ -912,9 +952,18 @@ const langLabel = (k) => { const l = LANGS[k]; return l ? `${l.flag} ${l.name}` 
 function srcLang(){ return LANGS[$("srcLang").value] || LANGS.nor; }
 function tgtLang(){ return LANGS[$("tgtLang").value] || LANGS.ron; }
 
+// Map a translation-service code (e.g. "no","en","nb") back to our language key
+const TRANS_TO_KEY = (function(){ const m = {}; for (const k in LANGS) m[LANGS[k].trans] = k; m.nb = "nor"; m.nn = "nor"; return m; })();
+function transToKey(code){ return code ? (TRANS_TO_KEY[String(code).toLowerCase()] || null) : null; }
+
 (function initLangs(){
   const src = $("srcLang"), tgt = $("tgtLang");
-  const order = ["nor","dan","swe","isl","eng","deu","nld","fra","spa","ita","por","ron","pol","hun","ces","fin","ell","tur","rus","ukr"];
+  // most-used first (Norwegian, English, Romanian), then the rest
+  const order = ["nor","eng","ron","dan","swe","isl","deu","nld","fra","spa","ita","por","pol","hun","ces","fin","ell","tur","rus","ukr"];
+  // source select gets an auto-detect option at the top
+  const auto = document.createElement("option");
+  auto.value = "auto"; auto.textContent = "🔎 Detectează automat";
+  src.appendChild(auto);
   order.forEach(k => {
     const o1 = document.createElement("option"); o1.value = k; o1.textContent = langLabel(k); src.appendChild(o1);
     const o2 = document.createElement("option"); o2.value = k; o2.textContent = langLabel(k); tgt.appendChild(o2);
@@ -1379,20 +1428,29 @@ $("translateBtn").addEventListener("click", async () => {
    KEYLESS ENGINE — OCR (Tesseract.js) + free translation
    ========================================================= */
 async function runKeyless() {
-  const srcKey = $("srcLang").value, tgtKey = $("tgtLang").value;
-  const src = LANGS[srcKey], tgt = LANGS[tgtKey];
-  // 1) OCR (with image preprocessing for accuracy)
-  const raw = await ocrImage();
+  const srcSel = $("srcLang").value, tgtKey = $("tgtLang").value;
+  const tgt = LANGS[tgtKey];
+  const isAuto = srcSel === "auto";
+  // 1) OCR — for auto, read with a Norwegian+English model (your most used); else the chosen language
+  const raw = await ocrImage(isAuto ? "nor+eng" : LANGS[srcSel].tess);
   if (!raw || raw.replace(/\s/g,"").length < 2) {
     throw new Error("Nu am găsit text lizibil în imagine. Încearcă o poză mai clară, dreaptă și bine luminată. 📷");
   }
   // 2) reflow wrapped lines into real paragraphs (so translation keeps context)
   const noText = reflowText(raw);
-  // 3) local knowledge — curated folclor only for Norvegiană→Română
+  // 3) resolve the actual source language (detect it when Auto)
+  let srcKey = srcSel;
+  if (isAuto) {
+    showLoader(true, "Detectăm limba cărții... 🔎", 49);
+    srcKey = (await detectLangKey(noText)) || "eng";
+    toast(`Limbă detectată: ${langLabel(srcKey)} 🔎`, "");
+  }
+  const src = LANGS[srcKey];
+  // 4) local knowledge — curated folclor only for Norvegiană→Română
   const terms = (src.tess === "nor" && tgt.trans === "ro") ? detectFolklore(noText) : [];
-  // 4) faithful translation (free, no key), paragraph by paragraph
+  // 5) faithful translation (free, no key), paragraph by paragraph
   const roText = await translateText(noText, src.trans, tgt.trans);
-  // 5) vocabulary (curated NO→RO, or generic for any pair)
+  // 6) vocabulary (curated NO→RO, or generic for any pair)
   const vocab = await buildVocab(noText, src, tgt);
   applyResult({ no: noText, ro: roText, terms, vocab, src: srcKey, tgt: tgtKey });
   setMode("parallel");
@@ -1401,13 +1459,17 @@ async function runKeyless() {
 
 /* Dedicated reader: extract text only (no translation) so you can verify/fix it first */
 async function extractOnly() {
-  const srcKey = $("srcLang").value, tgtKey = $("tgtLang").value;
-  const src = LANGS[srcKey], tgt = LANGS[tgtKey];
-  const raw = await ocrImage();
+  const srcSel = $("srcLang").value, tgtKey = $("tgtLang").value;
+  const tgt = LANGS[tgtKey];
+  const isAuto = srcSel === "auto";
+  const raw = await ocrImage(isAuto ? "nor+eng" : LANGS[srcSel].tess);
   if (!raw || raw.replace(/\s/g,"").length < 2) {
     throw new Error("Nu am găsit text lizibil. Încearcă selectarea zonei cu text (✂️), o poză mai clară sau altă limbă/așezare. 📷");
   }
   const noText = reflowText(raw);
+  let srcKey = srcSel;
+  if (isAuto) { srcKey = (await detectLangKey(noText)) || "nor"; }
+  const src = LANGS[srcKey];
   const terms = (src.tess === "nor" && tgt.trans === "ro") ? detectFolklore(noText) : [];
   applyResult({ no: noText, ro: "", terms, vocab: [], src: srcKey, tgt: tgtKey });
   setMode("no");
@@ -1480,11 +1542,11 @@ function adaptiveThreshold(gray, out, w, h){
   }
 }
 
-async function ocrImage() {
+async function ocrImage(tessOverride) {
   if (typeof Tesseract === "undefined") {
     throw new Error("Motorul OCR nu s-a încărcat (verifică internetul). Poți folosi Mod Demo între timp. 🔌");
   }
-  const lang = srcLang().tess || "nor";
+  const lang = tessOverride || srcLang().tess || "nor";
   const psm  = $("ocrPsm").value || "3";
 
   const page = AP();
@@ -1627,6 +1689,19 @@ async function tMyMemory(text, src, tgt) {
   return tr;
 }
 
+// Detect the language of a text sample (uses Google's auto-detect); returns our key or null
+async function detectLangKey(text){
+  const sample = (text || "").replace(/\s+/g, " ").trim().slice(0, 400);
+  if (!sample) return null;
+  try {
+    const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" + encodeURIComponent(sample);
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return transToKey(d && d[2]); // d[2] = detected source code
+  } catch (_) { return null; }
+}
+
 /* ---- Vocabulary builder ----
    Uses the curated Norwegian→Romanian dictionary for that pair (fast, offline);
    for any other language pair, picks a few key words and translates them. */
@@ -1658,27 +1733,34 @@ function pickKeyWords(text, n){
 /* =========================================================
    OPTIONAL GEMINI ENGINE (more poetic) — needs a key
    ========================================================= */
-const GEMINI_PROMPT = `Ești un traducător fermecat de cărți pentru copii. Primești imaginea unei pagini dintr-o carte pentru copii scrisă în limba NORVEGIANĂ.
+function buildGeminiPrompt(srcName, tgtName){
+  const srcTxt = srcName ? `limba ${srcName}` : "limba din imagine (detecteaz-o singur)";
+  return `Ești un traducător fermecat de cărți pentru copii. Primești imaginea unei pagini dintr-o carte pentru copii scrisă în ${srcTxt}.
 
 Sarcinile tale:
-1. Extrage (OCR) tot textul norvegian de pe pagină, exact cum apare, păstrând rândurile/paragrafele.
-2. Tradu textul în limba ROMÂNĂ folosind un limbaj cald, expresiv, poetic și potrivit pentru copii mici. Păstrează ritmul, rima (dacă există) și atmosfera de poveste. Recreează magia, nu traduce cuvânt cu cuvânt.
-3. Identifică termeni culturali sau din folclorul norvegian (troll, nisse, fjord, hulder, tomte, Sankthans etc.) și explică-i pe înțelesul copiilor, în 1-2 propoziții calde.
-4. Extrage 6-14 cuvinte-cheie utile și oferă un mic dicționar norvegiană → română.
+1. Extrage (OCR) tot textul de pe pagină, exact cum apare, păstrând rândurile/paragrafele.
+2. Tradu textul în limba ${tgtName} folosind un limbaj cald, expresiv, poetic și potrivit pentru copii mici. Păstrează ritmul, rima (dacă există) și atmosfera de poveste. Recreează magia, nu traduce cuvânt cu cuvânt.
+3. Identifică termeni culturali sau din folclor (ex. troll, nisse, fjord, hulder, tomte etc. dacă apar) și explică-i pe înțelesul copiilor în limba ${tgtName}, în 1-2 propoziții calde.
+4. Extrage 6-14 cuvinte-cheie utile și oferă un mic dicționar (cuvânt din original → traducere în ${tgtName}).
 
 Răspunde DOAR cu un obiect JSON valid, fără markdown, în structura exactă:
-{"norwegian_text":"...","romanian_translation":"...","cultural_terms":[{"term":"...","explanation":"..."}],"vocabulary":[{"norwegian":"...","romanian":"..."}]}
-Dacă imaginea nu conține text norvegian lizibil, întoarce câmpuri goale.`;
+{"norwegian_text":"textul original","romanian_translation":"traducerea în ${tgtName}","cultural_terms":[{"term":"...","explanation":"..."}],"vocabulary":[{"norwegian":"cuvânt original","romanian":"traducere"}]}
+Dacă imaginea nu conține text lizibil, întoarce câmpuri goale.`;
+}
 
 async function runGemini() {
   const key = $("apiKey").value.trim();
   const model = $("modelSel").value;
+  const srcSel = $("srcLang").value, tgtKey = $("tgtLang").value;
+  const tgt = LANGS[tgtKey];
+  const isAuto = srcSel === "auto";
+  const srcName = isAuto ? "" : LANGS[srcSel].name;
   const page = AP();
   if (!page || !page.dataUrl) throw new Error("Nicio pagină de tradus. Adaugă o imagine 📷");
   const base64 = page.dataUrl.split(",")[1];
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const body = {
-    contents: [{ parts: [ { text: GEMINI_PROMPT }, { inline_data: { mime_type: page.mime, data: base64 } } ] }],
+    contents: [{ parts: [ { text: buildGeminiPrompt(srcName, tgt.name) }, { inline_data: { mime_type: page.mime, data: base64 } } ] }],
     generationConfig: { temperature: 0.7, responseMimeType: "application/json" }
   };
   showLoader(true, "Gemini citește și traduce poetic... ✨", 40);
@@ -1691,6 +1773,9 @@ async function runGemini() {
   const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join("") || "";
   const parsed = parseGeminiJson(text);
   if (!parsed) throw new Error("Răspunsul Gemini nu a putut fi interpretat.");
+  // detect the real source when Auto (so labels/audio are correct)
+  let srcKey = isAuto ? ((await detectLangKey(parsed.no)) || "eng") : srcSel;
+  parsed.src = srcKey; parsed.tgt = tgtKey;
   applyResult(parsed);
   toast("Gata! Traducere poetică Gemini 🎉", "ok");
 }
@@ -1996,9 +2081,15 @@ $("retransBtn").addEventListener("click", async () => {
   const edited = $("ocrEdit").value.trim();
   if (!edited) { toast("Nu există text de tradus. Corectează textul mai întâi ✍️", "err"); return; }
   try {
-    const srcKey = $("srcLang").value, tgtKey = $("tgtLang").value;
-    const src = LANGS[srcKey], tgt = LANGS[tgtKey];
+    const srcSel = $("srcLang").value, tgtKey = $("tgtLang").value;
+    const tgt = LANGS[tgtKey];
     const noText = reflowText(edited);
+    let srcKey = srcSel;
+    if (srcSel === "auto") {
+      showLoader(true, "Detectăm limba textului... 🔎", 40);
+      srcKey = (await detectLangKey(noText)) || (AP() && AP().result && AP().result.src) || "eng";
+    }
+    const src = LANGS[srcKey];
     const terms = (src.tess === "nor" && tgt.trans === "ro") ? detectFolklore(noText) : [];
     const roText = await translateText(noText, src.trans, tgt.trans);
     const vocab = await buildVocab(noText, src, tgt);
@@ -2126,7 +2217,7 @@ function buildBookHTML(){
   @media print{ body{max-width:none;padding:0;} .pg{page-break-after:always;border-bottom:none;} .pg:last-child{page-break-after:auto;} .orig[open]{} .orig{display:block;} }
 </style></head>
 <body>
-  <header><h1>🧚 Cartea Fermecată</h1><p>Traducere din ${srcLang().name.toLowerCase()} în ${tgtLang().name.toLowerCase()} · ${done.length} ${done.length===1?"pagină":"pagini"}</p></header>
+  <header><h1>🧚 Cartea Fermecată</h1><p>Traducere din ${(done[0] && LANGS[done[0].p.result.src] ? LANGS[done[0].p.result.src].name : srcLang().name).toLowerCase()} în ${(done[0] && LANGS[done[0].p.result.tgt] ? LANGS[done[0].p.result.tgt].name : tgtLang().name).toLowerCase()} · ${done.length} ${done.length===1?"pagină":"pagini"}</p></header>
   ${sections || "<p>Nu există încă pagini traduse. Tradu paginile mai întâi.</p>"}
   <footer>Creat cu Cartea Fermecată ♥</footer>
 </body></html>`;
@@ -2167,6 +2258,78 @@ $("printBookBtn").addEventListener("click", printBook);
 $("printBtn").addEventListener("click", printBook);
 
 $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey").click(); });
+
+/* =========================================================
+   PNG ICON GENERATOR (in-browser; useful for Play Store later)
+   ========================================================= */
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ff9ec4"/><stop offset=".38" stop-color="#b28dff"/><stop offset=".7" stop-color="#5eb0ff"/><stop offset="1" stop-color="#4fd1a5"/></linearGradient></defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <g transform="translate(256 272)">
+    <path d="M-150 -72 C -110 -102, -30 -102, 0 -76 C 30 -102, 110 -102, 150 -72 L 150 90 C 110 64, 30 64, 0 90 C -30 64, -110 64, -150 90 Z" fill="#ffffff" opacity="0.97"/>
+    <path d="M0 -76 L0 90" stroke="#d9cff0" stroke-width="6"/>
+    <g stroke="#b9a7e8" stroke-width="6" stroke-linecap="round">
+      <path d="M-120 -50 H-30"/><path d="M-120 -22 H-30"/><path d="M-120 6 H-30"/><path d="M-120 34 H-42"/>
+      <path d="M30 -50 H120"/><path d="M30 -22 H120"/><path d="M30 6 H120"/><path d="M42 34 H120"/>
+    </g>
+  </g>
+  <g transform="translate(150 116)" fill="#fff"><path d="M0 -36 C 6 -11, 11 -6, 36 0 C 11 6, 6 11, 0 36 C -6 11, -11 6, -36 0 C -11 -6, -6 -11, 0 -36 Z"/></g>
+  <circle cx="380" cy="150" r="10" fill="#fff" opacity="0.9"/><circle cx="360" cy="185" r="6" fill="#fff" opacity="0.7"/>
+</svg>`;
+const ICON_MASKABLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs><linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ff9ec4"/><stop offset=".38" stop-color="#b28dff"/><stop offset=".7" stop-color="#5eb0ff"/><stop offset="1" stop-color="#4fd1a5"/></linearGradient></defs>
+  <rect width="512" height="512" fill="url(#gm)"/>
+  <g transform="translate(256 268) scale(0.78)">
+    <path d="M-150 -72 C -110 -102, -30 -102, 0 -76 C 30 -102, 110 -102, 150 -72 L 150 90 C 110 64, 30 64, 0 90 C -30 64, -110 64, -150 90 Z" fill="#ffffff" opacity="0.97"/>
+    <path d="M0 -76 L0 90" stroke="#d9cff0" stroke-width="7"/>
+    <g stroke="#b9a7e8" stroke-width="7" stroke-linecap="round">
+      <path d="M-120 -50 H-30"/><path d="M-120 -22 H-30"/><path d="M-120 6 H-30"/><path d="M-120 34 H-42"/>
+      <path d="M30 -50 H120"/><path d="M30 -22 H120"/><path d="M30 6 H120"/><path d="M42 34 H120"/>
+    </g>
+  </g>
+</svg>`;
+
+function svgToPngBlob(svgStr, size){
+  return new Promise((resolve) => {
+    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const cv = document.createElement("canvas");
+        cv.width = size; cv.height = size;
+        cv.getContext("2d").drawImage(img, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        cv.toBlob(b => resolve(b), "image/png");
+      } catch (_) { URL.revokeObjectURL(url); resolve(null); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+async function downloadIcons(){
+  const jobs = [
+    [ICON_SVG, 512, "icon-512.png"],
+    [ICON_SVG, 192, "icon-192.png"],
+    [ICON_MASKABLE_SVG, 512, "icon-maskable-512.png"],
+  ];
+  let n = 0;
+  for (const [svg, size, name] of jobs){
+    const b = await svgToPngBlob(svg, size);
+    if (!b) continue;
+    const url = URL.createObjectURL(b);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    n++;
+    await new Promise(r => setTimeout(r, 350));
+  }
+  toast(n ? `${n} iconițe PNG descărcate 🎨` : "Nu am putut genera iconițele 😔", n ? "ok" : "err");
+}
+$("dlIconsBtn").addEventListener("click", downloadIcons);
 </script>
 
 <!-- ============ CINEMATIC INTRO CONTROLLER ============ -->
