@@ -145,7 +145,7 @@
     background:linear-gradient(135deg,#f6fbff,#f3fff9);border:2px solid var(--sky);border-radius:16px;padding:10px 12px;}
   .ocr-options label{font-weight:700;font-size:14px;}
   .ocr-options select{padding:8px 10px;border-radius:12px;border:2px solid var(--sky);font-family:'Quicksand';font-weight:600;background:#fff;color:var(--ink);font-size:14px;}
-  .zbtn#cropBtn{width:auto;font-family:'Fredoka';font-size:13px;padding:8px 12px;}
+  .zbtn#cropBtn{width:auto;font-family:'Fredoka';font-size:13px;padding:8px 14px;background:linear-gradient(135deg,#ffd9e8,#ffc2da);color:#c23b6a;}
   .zbtn#cropBtn.active{background:var(--pink-deep);color:#fff;}
   .stage img{max-width:none;user-select:none;-webkit-user-drag:none;transform-origin:center center;transition:transform .05s linear;}
   .stage .placeholder{color:var(--ink-soft);font-weight:600;text-align:center;padding:30px;}
@@ -599,6 +599,7 @@
   /* Viewer / stage */
   body.theme-dark .viewer-toolbar{ background:linear-gradient(90deg,#15204c,#123a38) !important; }
   body.theme-dark .zbtn{ background:#1b2244 !important; color:#e9e7f5 !important; }
+  body.theme-dark .zbtn#cropBtn{ background:#3a2440 !important; color:#ffa6c8 !important; }
   body.theme-dark .zbtn#cropBtn.active{ background:var(--pink-deep) !important; color:#fff !important; }
   body.theme-dark .zlabel{ background:rgba(255,255,255,.10); color:#e9e7f5; }
   body.theme-dark .stage{ background:repeating-conic-gradient(#141a3c 0% 25%, #191f44 0% 50%) 50%/26px 26px; }
@@ -2457,7 +2458,14 @@ $("dlIconsBtn").addEventListener("click", downloadIcons);
   // This is what unlocks "install as app" and offline caching.
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(() => {});
+      navigator.serviceWorker.register("sw.js").then((reg) => { try { reg.update(); } catch(_){} }).catch(() => {});
+    });
+    // When a new version takes over, reload once so the latest UI shows
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      location.reload();
     });
   }
 
