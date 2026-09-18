@@ -145,6 +145,8 @@
     box-shadow:inset 0 2px 10px rgba(255,207,77,.12);
   }
   .story.no{border-color:var(--sky);}
+  textarea.ocr-edit{width:100%;font-family:'Quicksand',sans-serif;font-weight:600;font-size:17px;color:var(--ink);resize:vertical;min-height:220px;outline:none;line-height:1.7;}
+  textarea.ocr-edit:focus{border-color:var(--sky-deep);box-shadow:0 0 0 4px rgba(94,176,255,.22);}
   .parallel{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   @media(max-width:720px){.parallel{grid-template-columns:1fr;}}
   .col-title{font-family:'Fredoka';font-weight:700;font-size:15px;margin:0 0 8px;display:flex;align-items:center;gap:6px;}
@@ -317,7 +319,12 @@
       </div>
     </div>
     <div id="viewNo" style="display:none;">
-      <div class="story no" id="storyNo"></div>
+      <p class="col-title no">🇳🇴 Text extras (OCR) — corectează greșelile de citire, apoi retradu</p>
+      <textarea class="story no ocr-edit" id="ocrEdit" spellcheck="false" placeholder="Textul norvegian extras din imagine va apărea aici..."></textarea>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+        <button class="btn-mint" id="retransBtn" type="button">🔁 Retradu textul corectat</button>
+        <span class="hint" style="width:auto;margin:0;text-align:left;">💡 Sfat: dacă traducerea nu e corectă, de obicei OCR-ul a citit greșit o literă. Corectează aici și apasă butonul.</span>
+      </div>
     </div>
 
     <!-- Cultural terms -->
@@ -614,25 +621,65 @@ $("translateBtn").addEventListener("click", async () => {
    KEYLESS ENGINE — OCR (Tesseract.js) + free translation
    ========================================================= */
 async function runKeyless() {
-  // 1) OCR
-  const noText = await ocrImage();
-  if (!noText || noText.replace(/\s/g,"").length < 2) {
-    throw new Error("Nu am găsit text lizibil în imagine. Încearcă o poză mai clară sau mai luminoasă. 📷");
+  // 1) OCR (with image preprocessing for accuracy)
+  const raw = await ocrImage();
+  if (!raw || raw.replace(/\s/g,"").length < 2) {
+    throw new Error("Nu am găsit text lizibil în imagine. Încearcă o poză mai clară, dreaptă și bine luminată. 📷");
   }
-  // 2) local knowledge (offline)
+  // 2) reflow wrapped lines into real paragraphs (so translation keeps context)
+  const noText = reflowText(raw);
+  // 3) local knowledge (offline)
   const terms = detectFolklore(noText);
   const vocab = extractVocab(noText);
-  // 3) translation (free, no key)
+  // 4) faithful translation (free, no key), paragraph by paragraph
   const roText = await translateNoToRo(noText);
   applyResult({ no: noText, ro: roText, terms, vocab });
-  toast("Gata! Povestea a fost tradusă gratuit 🎉", "ok");
+  setMode("parallel");
+  toast("Gata! Poți corecta textul OCR și retraduce dacă e nevoie ✍️", "ok");
+}
+
+/* ---- OCR image preprocessing: upscale + grayscale + contrast ----
+   Curățarea imaginii înainte de OCR reduce mult greșelile de citire. */
+function preprocessImage(dataUrl){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let { width:w, height:h } = img;
+        if (!w || !h) { resolve(null); return; }
+        // upscale small images so litere mici devin lizibile
+        const scale = w < 1400 ? Math.min(3, 1700 / w) : 1;
+        const cw = Math.round(w * scale), ch = Math.round(h * scale);
+        const cv = document.createElement("canvas");
+        cv.width = cw; cv.height = ch;
+        const ctx = cv.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, cw, ch);
+        const id = ctx.getImageData(0, 0, cw, ch);
+        const d = id.data;
+        const contrast = 1.4, intercept = 128 * (1 - contrast);
+        for (let i = 0; i < d.length; i += 4) {
+          let g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]; // grayscale
+          g = g * contrast + intercept;                     // boost contrast
+          g = g < 0 ? 0 : g > 255 ? 255 : g;
+          d[i] = d[i+1] = d[i+2] = g;
+        }
+        ctx.putImageData(id, 0, 0);
+        resolve(cv);
+      } catch (_) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
 }
 
 async function ocrImage() {
   if (typeof Tesseract === "undefined") {
     throw new Error("Motorul OCR nu s-a încărcat (verifică internetul). Poți folosi Mod Demo între timp. 🔌");
   }
-  showLoader(true, "Pornim cititorul magic de litere... 🔍", 3);
+  showLoader(true, "Pregătim imaginea pentru citire... 🖼️", 2);
+  const source = (await preprocessImage(state.imageDataUrl)) || state.imageDataUrl;
+
+  showLoader(true, "Pornim cititorul magic de litere... 🔍", 4);
   const worker = await Tesseract.createWorker("nor", 1, {
     logger: (m) => {
       if (m.status === "recognizing text") {
@@ -643,7 +690,9 @@ async function ocrImage() {
     }
   });
   try {
-    const { data: { text } } = await worker.recognize(state.imageDataUrl);
+    // preserve spacing so cuvintele nu se lipesc
+    await worker.setParameters({ preserve_interword_spaces: "1" });
+    const { data: { text } } = await worker.recognize(source);
     return cleanupOcr(text);
   } finally {
     await worker.terminate();
@@ -655,29 +704,58 @@ function cleanupOcr(text){
     .replace(/[ \t]+\n/g,"\n")     // trailing spaces
     .replace(/\n{3,}/g,"\n\n")     // collapse blank lines
     .replace(/[ \t]{2,}/g," ")     // collapse spaces
+    .replace(/(^|\n)[|·•]+\s*/g,"$1") // drop stray OCR bullets
     .trim();
 }
 
-/* ---- Free translation with fallback chain ---- */
-async function translateNoToRo(text) {
+/* ---- Reflow: transformă rânduri rupte în paragrafe întregi ----
+   În cărți, o pagină rupe propozițiile pe mai multe rânduri. Traducerea
+   corectă are nevoie de propoziția întreagă, nu de fragmente. */
+function reflowText(text){
   const lines = text.split("\n");
-  const nonEmpty = lines.filter(l => l.trim()).length || 1;
+  const paras = [];
+  let cur = [];
+  for (const line of lines){
+    if (!line.trim()){ if (cur.length){ paras.push(cur); cur = []; } continue; }
+    cur.push(line.trim());
+  }
+  if (cur.length) paras.push(cur);
+  return paras.map(joinWrappedLines).join("\n\n");
+}
+function joinWrappedLines(lines){
+  let out = lines[0] || "";
+  for (let i = 1; i < lines.length; i++){
+    const l = lines[i];
+    // dehyphenate words split across a line break (f.ex. "even-\ntyr")
+    if (/[a-zæøåäöéà]-$/i.test(out) && /^[a-zæøåäö]/.test(l)){
+      out = out.replace(/-$/,"") + l;
+    } else {
+      out += " " + l;
+    }
+  }
+  return out;
+}
+
+/* ---- Faithful free translation, paragraph by paragraph (keeps context) ---- */
+async function translateNoToRo(text) {
+  const paras = text.split(/\n{2,}/);
+  const nonEmpty = paras.filter(p => p.trim()).length || 1;
   const out = [];
   let done = 0;
-  for (const line of lines) {
-    if (!line.trim()) { out.push(""); continue; }
+  for (const p of paras) {
+    if (!p.trim()) { out.push(""); continue; }
     done++;
-    showLoader(true, `Traducem povestea în română... ${done}/${nonEmpty} 🪄`, 50 + (done/nonEmpty)*48);
-    const chunks = chunkText(line, 480);
+    showLoader(true, `Traducem cu grijă... paragraful ${done}/${nonEmpty} 🪄`, 50 + (done/nonEmpty)*48);
+    const chunks = chunkText(p, 1400);
     const translated = [];
     for (const c of chunks) translated.push(await translateChunk(c));
     out.push(translated.join(" "));
   }
   showLoader(true, "Aproape gata... ✨", 99);
-  return out.join("\n");
+  return out.join("\n\n");
 }
 
-// split a long line into <= maxLen pieces at sentence/space boundaries
+// split long text into <= maxLen pieces at sentence/space boundaries
 function chunkText(line, maxLen) {
   if (line.length <= maxLen) return [line];
   const parts = [];
@@ -694,10 +772,14 @@ function chunkText(line, maxLen) {
 }
 
 async function translateChunk(text) {
-  // Try services in order; if all fail, return original so the story still shows.
-  try { return await tGoogle(text); } catch (_) {}
-  try { return await tMyMemory(text); } catch (_) {}
+  // Try quality services in order; if all fail, keep original so nothing is lost.
+  try { const r = await tGoogle(text);   if (validTr(r, text)) return r; } catch (_) {}
+  try { const r = await tLingva(text);   if (validTr(r, text)) return r; } catch (_) {}
+  try { const r = await tMyMemory(text); if (validTr(r, text)) return r; } catch (_) {}
   return text;
+}
+function validTr(r, src){
+  return r && r.trim().length > 0 && !/MYMEMORY WARNING|QUERY LENGTH LIMIT|INVALID/i.test(r);
 }
 
 async function tGoogle(text) {
@@ -707,6 +789,15 @@ async function tGoogle(text) {
   const d = await r.json();
   if (!Array.isArray(d) || !Array.isArray(d[0])) throw new Error("google-shape");
   return d[0].map(seg => (seg && seg[0]) ? seg[0] : "").join("");
+}
+
+async function tLingva(text) {
+  const url = "https://lingva.ml/api/v1/no/ro/" + encodeURIComponent(text);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("lingva");
+  const d = await r.json();
+  if (!d || !d.translation) throw new Error("lingva-empty");
+  return d.translation;
 }
 
 async function tMyMemory(text) {
@@ -779,7 +870,7 @@ function applyResult(r) {
   state.result = r;
   $("storyRo").textContent = r.ro || "(fără traducere)";
   $("parRo").textContent = r.ro || "(fără traducere)";
-  $("storyNo").textContent = r.no || "(fără text norvegian)";
+  $("ocrEdit").value = r.no || "";
   $("parNo").textContent = r.no || "(fără text norvegian)";
 
   const tb = $("termsBox");
@@ -946,6 +1037,27 @@ $("demoBtn").addEventListener("click", () => {
 /* =========================================================
    Buttons: print / clear
    ========================================================= */
+// Re-translate the (possibly corrected) OCR text
+$("retransBtn").addEventListener("click", async () => {
+  if (state.busy) return;
+  const edited = $("ocrEdit").value.trim();
+  if (!edited) { toast("Nu există text de tradus. Corectează textul mai întâi ✍️", "err"); return; }
+  try {
+    const noText = reflowText(edited);
+    const terms = detectFolklore(noText);
+    const vocab = extractVocab(noText);
+    const roText = await translateNoToRo(noText);
+    applyResult({ no: noText, ro: roText, terms, vocab });
+    setMode("parallel");
+    toast("Am retradus textul corectat 🎉", "ok");
+  } catch (err) {
+    console.error(err);
+    toast(err.message || "Eroare la traducere. Încearcă din nou.", "err");
+  } finally {
+    showLoader(false);
+  }
+});
+
 $("printBtn").addEventListener("click", () => window.print());
 $("clearBtn").addEventListener("click", () => {
   if (synth) synth.cancel();
