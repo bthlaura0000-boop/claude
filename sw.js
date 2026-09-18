@@ -3,7 +3,7 @@
    NOTE: translation services (Google/Lingva/MyMemory) and Gemini always need the
    network, so they are never cached. OCR works offline only AFTER a first online
    run (the engine + Norwegian data are cached on first use). */
-const CACHE = "cartea-fermecata-v1";
+const CACHE = "cartea-fermecata-v3";
 
 // App shell precached at install time (all relative -> works under any subpath)
 const CORE = [
