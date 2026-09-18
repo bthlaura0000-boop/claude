@@ -679,6 +679,22 @@
   renderChips();
   ingInput.focus();
 })();
+
+// Dacă un service worker vechi controlează pagina (cache), forțăm actualizarea
+// și reîncărcăm o singură dată când versiunea nouă preia controlul — astfel
+// interfața e mereu cea mai recentă (în română), fără refresh manual.
+(function(){
+  if(!("serviceWorker" in navigator)) return;
+  var refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", function(){
+    if(refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ try { r.update(); } catch(e){} });
+  }).catch(function(){});
+})();
 </script>
 </body>
 </html>

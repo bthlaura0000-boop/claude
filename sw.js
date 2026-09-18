@@ -3,7 +3,7 @@
    NOTE: translation services (Google/Lingva/MyMemory) and Gemini always need the
    network, so they are never cached. OCR works offline only AFTER a first online
    run (the engine + Norwegian data are cached on first use). */
-const CACHE = "cartea-fermecata-v3";
+const CACHE = "cartea-fermecata-v4";
 
 // App shell precached at install time (all relative -> works under any subpath)
 const CORE = [
@@ -58,7 +58,21 @@ self.addEventListener("fetch", (e) => {
   const runtimeOk = RUNTIME_HOSTS.some((h) => url.hostname.includes(h));
   if (!sameOrigin && !runtimeOk) return; // let the browser handle anything else
 
-  // Cache-first, then network (and refresh the cache in the background)
+  // Network-first for same-origin pages (navigations / .html) so the UI is ALWAYS
+  // fresh — never serve a stale cached page. Falls back to cache only when offline.
+  const isPage = req.mode === "navigate" ||
+                 req.destination === "document" ||
+                 (sameOrigin && url.pathname.endsWith(".html"));
+  if (sameOrigin && isPage) {
+    e.respondWith(
+      fetchAndCache(req).catch(() =>
+        caches.match(req).then((hit) => hit || caches.match("./index.html"))
+      )
+    );
+    return;
+  }
+
+  // Cache-first for static assets (fonts, icons, OCR engine + data)
   e.respondWith(
     caches.match(req).then((hit) => {
       const fetchPromise = fetchAndCache(req);
