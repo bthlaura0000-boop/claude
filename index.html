@@ -7,6 +7,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- PWA: instalabilă + offline (shell, fonturi, motor OCR) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#b28dff">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cartea Fermecată">
 <!-- OCR în browser, fără cheie API -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
@@ -467,6 +476,18 @@
   /* =======================================================
      DAY / NIGHT THEME TOGGLE (switch-style, in header)
      ======================================================= */
+  .install-btn{
+    position:absolute; top:16px; left:16px; z-index:6;
+    background:linear-gradient(135deg,var(--mint-deep),#2fc490); color:#fff;
+    border:none; border-radius:100px; padding:9px 16px;
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;
+    box-shadow:0 8px 22px rgba(47,196,144,.35); cursor:pointer;
+    transition:transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s;
+  }
+  .install-btn:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(47,196,144,.45); }
+  .install-btn:active{ transform:translateY(0); }
+  @media(max-width:560px){ .install-btn{ font-size:12px; padding:8px 12px; } }
+
   .theme-toggle{
     position:absolute; top:16px; right:16px; z-index:6;
     display:inline-flex; align-items:center; gap:10px;
@@ -655,6 +676,7 @@
 <div class="wrap">
 
   <header class="hero">
+    <button id="installBtn" class="install-btn" type="button" title="Instalează aplicația pe dispozitiv" hidden>⬇️ Instalează aplicația</button>
     <button id="themeToggle" class="theme-toggle" type="button" title="Comută între tema de zi și de noapte" aria-label="Comută tema zi/noapte">
       <span class="tt-track"><span class="tt-thumb">🌙</span></span>
       <span class="tt-label">Noapte</span>
@@ -2059,7 +2081,7 @@ $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey
       return;
     }
 
-    // Fallback: smooth color fade across the whole UI
+    // Fallback: smooth color fade across the whole UI (theme)
     if (!reduce) {
       document.body.classList.add("theme-anim");
       setTimeout(() => document.body.classList.remove("theme-anim"), 680);
@@ -2126,6 +2148,45 @@ $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey
       aurora.style.transform = `translate(${dx}px, ${dy}px)`;
     });
   }
+})();
+</script>
+
+<!-- ============ PWA: install + offline (service worker) ============ -->
+<script>
+(function(){
+  "use strict";
+  // Register the service worker only when served over http/https (not file://).
+  // This is what unlocks "install as app" and offline caching.
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+
+  // Custom install button (Chrome/Edge/Android fire beforeinstallprompt)
+  let deferredPrompt = null;
+  const btn = document.getElementById("installBtn");
+  const isStandalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches
+                       || window.navigator.standalone === true;
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (btn && !isStandalone) btn.hidden = false;
+  });
+
+  if (btn) btn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch (_) {}
+    deferredPrompt = null;
+    btn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    if (btn) btn.hidden = true;
+    if (typeof toast === "function") toast("Aplicația a fost instalată! 🎉 O găsești pe ecranul tău.", "ok");
+  });
 })();
 </script>
 </body>
