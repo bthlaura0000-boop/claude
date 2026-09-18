@@ -77,6 +77,18 @@
   .meal-opt:hover{border-color:var(--tomato);}
   .meal-opt.active{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(232,98,58,.28);}
 
+  /* Selector porții */
+  .portions-row{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+  .stepper{display:inline-flex;align-items:center;gap:2px;background:#fff;border:2px solid var(--line);border-radius:100px;padding:4px;}
+  .stepper button{
+    all:unset;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;
+    font-size:22px;font-weight:700;color:var(--tomato-deep);line-height:1;transition:.15s;
+  }
+  .stepper button:hover{background:var(--tomato);color:#fff;}
+  .stepper button:disabled{color:var(--line);cursor:not-allowed;background:transparent;}
+  .stepper .val{min-width:54px;text-align:center;font-family:'Fraunces',serif;font-weight:700;font-size:20px;color:var(--ink);}
+  .portions-row .plabel{color:var(--ink-soft);font-size:14px;font-weight:600;}
+
   /* Câmp ingrediente */
   .chip-field{
     display:flex;flex-wrap:wrap;gap:8px;align-items:center;
@@ -212,9 +224,20 @@
       <button class="meal-opt" data-meal="mic dejun">☕ Mic dejun</button>
       <button class="meal-opt active" data-meal="prânz">🍽️ Prânz</button>
       <button class="meal-opt" data-meal="cină">🌙 Cină</button>
+      <button class="meal-opt" data-meal="desert">🍰 Desert</button>
     </div>
 
-    <p class="label"><span class="step-num">2</span> Ce ai prin casă?</p>
+    <p class="label"><span class="step-num">2</span> Câte porții?</p>
+    <div class="portions-row">
+      <div class="stepper">
+        <button type="button" id="portMinus" aria-label="Mai puține porții">−</button>
+        <span class="val" id="portVal">2</span>
+        <button type="button" id="portPlus" aria-label="Mai multe porții">+</button>
+      </div>
+      <span class="plabel" id="portLabel">porții</span>
+    </div>
+
+    <p class="label"><span class="step-num">3</span> Ce ai prin casă?</p>
     <p class="sub">Adaugă ingredientele pe rând — apasă <b>Enter</b> sau virgulă după fiecare.</p>
 
     <div class="chip-field" id="chipField">
@@ -291,11 +314,14 @@
   // ---------- Stare ----------
   var ingredients = [];
   var meal = "prânz";
+  var portions = 2;
+  var MIN_PORT = 1, MAX_PORT = 12;
   var busy = false;
 
   // ---------- Elemente ----------
   var $ = function(id){ return document.getElementById(id); };
   var mealRow = $("mealRow");
+  var portMinus = $("portMinus"), portPlus = $("portPlus"), portVal = $("portVal"), portLabel = $("portLabel");
   var chipField = $("chipField"), ingInput = $("ingInput");
   var cookBtn = $("cookBtn"), surpriseBtn = $("surpriseBtn"), clearBtn = $("clearBtn");
   var notice = $("notice"), loader = $("loader"), loaderText = $("loaderText"), result = $("result");
@@ -311,6 +337,16 @@
     btn.classList.add("active");
     meal = btn.getAttribute("data-meal");
   });
+
+  // ---------- Selector porții ----------
+  function renderPortions(){
+    portVal.textContent = portions;
+    portLabel.textContent = (portions === 1) ? "porție" : "porții";
+    portMinus.disabled = (portions <= MIN_PORT);
+    portPlus.disabled = (portions >= MAX_PORT);
+  }
+  portMinus.addEventListener("click", function(){ if(portions > MIN_PORT){ portions--; renderPortions(); } });
+  portPlus.addEventListener("click", function(){ if(portions < MAX_PORT){ portions++; renderPortions(); } });
 
   // ---------- Ingrediente (etichete) ----------
   function renderChips(){
@@ -405,6 +441,7 @@
       "Răspunde EXCLUSIV în limba română.",
       "Persoana are aceste ingrediente la îndemână: " + ingStr + ".",
       "Felul trebuie să fie potrivit pentru: " + meal + ".",
+      "Rețeta trebuie calculată pentru " + portions + (portions === 1 ? " porție" : " porții") + ", iar cantitatile din pași să fie pe măsură.",
       creativity,
       "Reguli:",
       "- Folosește în MARE PARTE ingredientele din listă. Poți presupune că sunt disponibile lucruri de bază (sare, piper, ulei, apă, unt).",
@@ -415,7 +452,7 @@
       '  "dishName": string (numele felului, în română),',
       '  "blurb": string (o singură frază scurtă și apetisantă),',
       '  "time": string (timpul de pregătire, ex: "aprox. 25 min"),',
-      '  "serves": string (ex: "2 porții"),',
+      '  "serves": string (numărul de porții, ex: "' + portions + (portions === 1 ? " porție" : " porții") + '"),',
       '  "usesIngredients": string[] (ingredientele din lista lor pe care le folosește felul),',
       '  "extras": string[] (ce ar mai trebui să cumpere/folosească; listă goală dacă nu e nevoie de nimic în plus față de cele de bază),',
       '  "steps": string[] (instrucțiuni pas cu pas, o singură acțiune pe element)',
@@ -509,12 +546,13 @@
       bt.textContent = "⏱️ " + String(r.time).trim();
       dishBadges.appendChild(bt);
     }
-    if(r.serves && String(r.serves).trim()){
-      var bp = document.createElement("span");
-      bp.className = "badge meta";
-      bp.textContent = "🍽️ " + String(r.serves).trim();
-      dishBadges.appendChild(bp);
-    }
+    var servesTxt = (r.serves && String(r.serves).trim())
+      ? String(r.serves).trim()
+      : (portions + (portions === 1 ? " porție" : " porții"));
+    var bp = document.createElement("span");
+    bp.className = "badge meta";
+    bp.textContent = "🍽️ " + servesTxt;
+    dishBadges.appendChild(bp);
 
     dishName.textContent = r.dishName || "O idee gustoasă";
     dishBlurb.textContent = r.blurb || "";
@@ -602,6 +640,7 @@
   printBtn.addEventListener("click", function(){ window.print(); });
 
   // ---------- Init ----------
+  renderPortions();
   renderChips();
   ingInput.focus();
 })();
