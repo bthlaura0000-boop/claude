@@ -129,6 +129,15 @@
     display:flex;align-items:center;justify-content:center;cursor:grab;
   }
   .stage.dragging{cursor:grabbing;}
+  .stage.cropping{cursor:crosshair;}
+  .cropbox{position:absolute;border:2.5px dashed var(--pink-deep);background:rgba(255,143,184,.18);
+    box-shadow:0 0 0 9999px rgba(74,63,107,.28);pointer-events:none;border-radius:6px;z-index:5;}
+  .ocr-options{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin-top:14px;
+    background:linear-gradient(135deg,#f6fbff,#f3fff9);border:2px solid var(--sky);border-radius:16px;padding:10px 12px;}
+  .ocr-options label{font-weight:700;font-size:14px;}
+  .ocr-options select{padding:8px 10px;border-radius:12px;border:2px solid var(--sky);font-family:'Quicksand';font-weight:600;background:#fff;color:var(--ink);font-size:14px;}
+  .zbtn#cropBtn{width:auto;font-family:'Fredoka';font-size:13px;padding:8px 12px;}
+  .zbtn#cropBtn.active{background:var(--pink-deep);color:#fff;}
   .stage img{max-width:none;user-select:none;-webkit-user-drag:none;transform-origin:center center;transition:transform .05s linear;}
   .stage .placeholder{color:var(--ink-soft);font-weight:600;text-align:center;padding:30px;}
   .stage .placeholder .big{font-size:60px;display:block;margin-bottom:8px;opacity:.6;}
@@ -249,10 +258,29 @@
         <input type="file" id="fileInput" accept="image/*" hidden>
         <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
       </div>
-      <div style="text-align:center;margin-top:14px;">
-        <button class="btn-mint" id="translateBtn" type="button" disabled>🪄 Tradu pagina!</button>
+      <div class="ocr-options">
+        <label>📖 Limbă text:</label>
+        <select id="ocrLang" title="Limba din care se extrage textul">
+          <option value="nor">🇳🇴 Norvegiană</option>
+          <option value="nor+eng">Norvegiană + Engleză</option>
+          <option value="dan">🇩🇰 Daneză</option>
+          <option value="swe">🇸🇪 Suedeză</option>
+          <option value="eng">🇬🇧 Engleză</option>
+        </select>
+        <label>🧩 Așezare:</label>
+        <select id="ocrPsm" title="Cum e aranjat textul pe pagină">
+          <option value="3">Automat</option>
+          <option value="6">Un bloc de text</option>
+          <option value="4">O coloană</option>
+          <option value="1">Pagină + orientare</option>
+        </select>
+      </div>
+      <div style="text-align:center;margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+        <button class="btn-sky" id="extractBtn" type="button" disabled>📖 Extrage textul</button>
+        <button class="btn-mint" id="translateBtn" type="button" disabled>🪄 Extrage + Tradu</button>
         <button class="btn-ghost no-print" id="clearBtn" type="button">🧹 Șterge tot</button>
       </div>
+      <p class="hint" id="cropStatus" style="margin-top:10px;"></p>
     </div>
 
     <!-- Viewer -->
@@ -262,8 +290,9 @@
         <button class="zbtn" id="zoomIn" type="button" title="Mărește">➕</button>
         <button class="zbtn" id="zoomReset" type="button" title="Resetează">🔄</button>
         <span class="zlabel" id="zoomLabel">100%</span>
+        <button class="zbtn" id="cropBtn" type="button" title="Selectează doar zona cu text">✂️ Selectează text</button>
         <span class="spacer"></span>
-        <span class="zlabel">🔍 Trage cu mouse-ul pentru panoramare</span>
+        <span class="zlabel" id="viewerHint">🔍 Trage pentru panoramare</span>
       </div>
       <div class="stage" id="stage">
         <div class="placeholder" id="stagePlaceholder">
@@ -271,6 +300,7 @@
           Aici va apărea pagina cărții tale
         </div>
         <img id="previewImg" alt="Pagina cărții" style="display:none;">
+        <div class="cropbox" id="cropBox" style="display:none;"></div>
       </div>
     </div>
   </div>
@@ -372,6 +402,8 @@ const state = {
   mode: "ro",
   zoom: 1, panX: 0, panY: 0,
   busy: false,
+  cropMode: false,
+  crop: null,   // {x,y,w,h} in natural image pixels
 };
 
 /* ---------- Toast ---------- */
@@ -513,8 +545,10 @@ function setImage(dataUrl, mime) {
   previewImg.style.display = "block";
   stagePlaceholder.style.display = "none";
   resetZoom();
+  clearCrop();
   $("translateBtn").disabled = false;
-  toast("Imagine încărcată! Apasă „Tradu pagina!” 🪄", "ok");
+  $("extractBtn").disabled = false;
+  toast("Imagine încărcată! Extrage textul 📖 sau Extrage + Tradu 🪄", "ok");
 }
 
 $("pickBtn").addEventListener("click", () => $("fileInput").click());
@@ -565,24 +599,94 @@ stage.addEventListener("wheel", (e) => {
 let panning=false, startX=0, startY=0;
 stage.addEventListener("mousedown", (e) => {
   if (!state.imageDataUrl) return;
+  if (state.cropMode) { beginCrop(e.clientX, e.clientY); return; }
   panning=true; stage.classList.add("dragging");
   startX = e.clientX - state.panX; startY = e.clientY - state.panY;
 });
 window.addEventListener("mousemove", (e) => {
+  if (state.cropMode && cropping) { updateCrop(e.clientX, e.clientY); return; }
   if (!panning) return;
   state.panX = e.clientX - startX; state.panY = e.clientY - startY;
   applyTransform();
 });
-window.addEventListener("mouseup", () => { panning=false; stage.classList.remove("dragging"); });
+window.addEventListener("mouseup", () => {
+  if (state.cropMode && cropping) { endCrop(); return; }
+  panning=false; stage.classList.remove("dragging");
+});
 stage.addEventListener("touchstart", (e) => {
   if (!state.imageDataUrl || e.touches.length!==1) return;
+  if (state.cropMode) { beginCrop(e.touches[0].clientX, e.touches[0].clientY); return; }
   panning=true; startX=e.touches[0].clientX-state.panX; startY=e.touches[0].clientY-state.panY;
 }, {passive:true});
 stage.addEventListener("touchmove", (e) => {
+  if (state.cropMode && cropping && e.touches.length===1) { updateCrop(e.touches[0].clientX, e.touches[0].clientY); return; }
   if (!panning || e.touches.length!==1) return;
   state.panX=e.touches[0].clientX-startX; state.panY=e.touches[0].clientY-startY; applyTransform();
 }, {passive:true});
-stage.addEventListener("touchend", () => panning=false);
+stage.addEventListener("touchend", () => { if (state.cropMode && cropping) endCrop(); else panning=false; });
+
+/* =========================================================
+   CROP / REGION SELECTION — extrage doar zona cu text
+   ========================================================= */
+const cropBox = $("cropBox");
+let cropping=false, cropStartClient={x:0,y:0};
+
+$("cropBtn").addEventListener("click", () => {
+  if (!state.imageDataUrl) { toast("Încarcă mai întâi o imagine 🖼️", "err"); return; }
+  state.cropMode = !state.cropMode;
+  $("cropBtn").classList.toggle("active", state.cropMode);
+  $("cropBtn").textContent = state.cropMode ? "✂️ Anulează selecția" : "✂️ Selectează text";
+  $("viewerHint").textContent = state.cropMode ? "✂️ Trage un dreptunghi peste text" : "🔍 Trage pentru panoramare";
+  stage.classList.toggle("cropping", state.cropMode);
+  if (!state.cropMode) clearCrop();
+});
+
+function beginCrop(cx, cy){
+  cropping = true;
+  cropStartClient = { x: cx, y: cy };
+  cropBox.style.display = "block";
+  positionCropBox(cx, cy, cx, cy);
+}
+function updateCrop(cx, cy){
+  positionCropBox(cropStartClient.x, cropStartClient.y, cx, cy);
+}
+function positionCropBox(x1, y1, x2, y2){
+  const s = stage.getBoundingClientRect();
+  const left = Math.min(x1, x2) - s.left, top = Math.min(y1, y2) - s.top;
+  const w = Math.abs(x2 - x1), h = Math.abs(y2 - y1);
+  cropBox.style.left = left + "px"; cropBox.style.top = top + "px";
+  cropBox.style.width = w + "px"; cropBox.style.height = h + "px";
+}
+function endCrop(){
+  cropping = false;
+  // Convert the on-screen selection to NATURAL image pixel coordinates.
+  const box = cropBox.getBoundingClientRect();
+  const imgR = previewImg.getBoundingClientRect();
+  if (box.width < 8 || box.height < 8) { clearCrop(); return; }
+  const sx = previewImg.naturalWidth / imgR.width;
+  const sy = previewImg.naturalHeight / imgR.height;
+  let x = (box.left - imgR.left) * sx;
+  let y = (box.top  - imgR.top ) * sy;
+  let w = box.width  * sx;
+  let h = box.height * sy;
+  // clamp to image bounds
+  x = Math.max(0, x); y = Math.max(0, y);
+  w = Math.min(previewImg.naturalWidth  - x, w);
+  h = Math.min(previewImg.naturalHeight - y, h);
+  if (w < 4 || h < 4) { clearCrop(); return; }
+  state.crop = { x, y, w, h };
+  updateCropStatus();
+}
+function clearCrop(){
+  state.crop = null;
+  cropBox.style.display = "none";
+  updateCropStatus();
+}
+function updateCropStatus(){
+  $("cropStatus").innerHTML = state.crop
+    ? `✂️ <b>Zonă selectată</b> (${Math.round(state.crop.w)}×${Math.round(state.crop.h)}px) — extragerea va folosi doar această zonă.`
+    : "";
+}
 
 /* =========================================================
    LOADER helpers
@@ -592,12 +696,29 @@ function showLoader(show, msg, progress) {
   if (msg != null) $("loaderMsg").textContent = msg;
   if (progress != null) $("progbar").style.width = Math.max(0,Math.min(100,progress)) + "%";
   state.busy = show;
-  $("translateBtn").disabled = show || !state.imageDataUrl;
+  const noImg = !state.imageDataUrl;
+  $("translateBtn").disabled = show || noImg;
+  $("extractBtn").disabled = show || noImg;
+  const rb = $("retransBtn"); if (rb) rb.disabled = show;
 }
 
 /* =========================================================
-   MAIN TRANSLATE — dispatch by engine
+   MAIN — dispatch by button/engine
    ========================================================= */
+// Dedicated reader: extract only (always uses the local OCR reader)
+$("extractBtn").addEventListener("click", async () => {
+  if (state.busy) return;
+  if (!state.imageDataUrl) { toast("Încarcă mai întâi o imagine 🖼️", "err"); return; }
+  try {
+    await extractOnly();
+  } catch (err) {
+    console.error(err);
+    toast(err.message || "Eroare la extragerea textului.", "err");
+  } finally {
+    showLoader(false);
+  }
+});
+
 $("translateBtn").addEventListener("click", async () => {
   if (state.busy) return;
   if (!state.imageDataUrl) { toast("Încarcă mai întâi o imagine 🖼️", "err"); return; }
@@ -638,31 +759,49 @@ async function runKeyless() {
   toast("Gata! Poți corecta textul OCR și retraduce dacă e nevoie ✍️", "ok");
 }
 
+/* Dedicated reader: extract text only (no translation) so you can verify/fix it first */
+async function extractOnly() {
+  const raw = await ocrImage();
+  if (!raw || raw.replace(/\s/g,"").length < 2) {
+    throw new Error("Nu am găsit text lizibil. Încearcă selectarea zonei cu text (✂️), o poză mai clară sau altă limbă/așezare. 📷");
+  }
+  const noText = reflowText(raw);
+  const terms = detectFolklore(noText);
+  const vocab = extractVocab(noText);
+  applyResult({ no: noText, ro: "", terms, vocab });
+  setMode("no");
+  toast("Text extras! Verifică-l, corectează greșelile, apoi apasă „🔁 Retradu textul corectat” ✍️", "ok");
+}
+
 /* ---- OCR image preprocessing: upscale + grayscale + contrast ----
    Curățarea imaginii înainte de OCR reduce mult greșelile de citire. */
-function preprocessImage(dataUrl){
+function preprocessImage(dataUrl, crop){
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       try {
-        let { width:w, height:h } = img;
-        if (!w || !h) { resolve(null); return; }
-        // upscale small images so litere mici devin lizibile
-        const scale = w < 1400 ? Math.min(3, 1700 / w) : 1;
-        const cw = Math.round(w * scale), ch = Math.round(h * scale);
+        // source rectangle (whole image or the selected crop)
+        const sx = crop ? crop.x : 0, sy = crop ? crop.y : 0;
+        const sw = crop ? crop.w : img.width, sh = crop ? crop.h : img.height;
+        if (!sw || !sh) { resolve(null); return; }
+        // upscale so small letters become legible (target ~1800px on long side)
+        const longSide = Math.max(sw, sh);
+        const scale = longSide < 1800 ? Math.min(4, 1900 / longSide) : 1;
+        const cw = Math.round(sw * scale), ch = Math.round(sh * scale);
         const cv = document.createElement("canvas");
         cv.width = cw; cv.height = ch;
         const ctx = cv.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0, cw, ch);
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
         const id = ctx.getImageData(0, 0, cw, ch);
         const d = id.data;
-        const contrast = 1.4, intercept = 128 * (1 - contrast);
-        for (let i = 0; i < d.length; i += 4) {
-          let g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]; // grayscale
-          g = g * contrast + intercept;                     // boost contrast
-          g = g < 0 ? 0 : g > 255 ? 255 : g;
-          d[i] = d[i+1] = d[i+2] = g;
+        // grayscale
+        const gray = new Float32Array(cw * ch);
+        for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+          gray[p] = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
         }
+        // adaptive (local) threshold — robust to uneven lighting on photos
+        adaptiveThreshold(gray, d, cw, ch);
         ctx.putImageData(id, 0, 0);
         resolve(cv);
       } catch (_) { resolve(null); }
@@ -672,26 +811,59 @@ function preprocessImage(dataUrl){
   });
 }
 
+// Bradley/Roth adaptive thresholding using an integral image (fast, O(n)).
+function adaptiveThreshold(gray, out, w, h){
+  const W = w + 1;
+  const integ = new Float64Array(W * (h + 1));
+  for (let y = 0; y < h; y++){
+    let rowsum = 0;
+    for (let x = 0; x < w; x++){
+      rowsum += gray[y*w + x];
+      integ[(y+1)*W + (x+1)] = integ[y*W + (x+1)] + rowsum;
+    }
+  }
+  const S = Math.max(15, Math.floor(w / 18));   // window size
+  const half = (S >> 1);
+  const t = 0.15;                                // sensitivity
+  for (let y = 0; y < h; y++){
+    const y1 = Math.max(0, y - half), y2 = Math.min(h - 1, y + half);
+    for (let x = 0; x < w; x++){
+      const x1 = Math.max(0, x - half), x2 = Math.min(w - 1, x + half);
+      const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+      const sum = integ[(y2+1)*W + (x2+1)] - integ[y1*W + (x2+1)] - integ[(y2+1)*W + x1] + integ[y1*W + x1];
+      const p = y*w + x;
+      const val = (gray[p] * count) <= (sum * (1 - t)) ? 0 : 255; // darker than local mean -> ink
+      const o = p * 4;
+      out[o] = out[o+1] = out[o+2] = val; out[o+3] = 255;
+    }
+  }
+}
+
 async function ocrImage() {
   if (typeof Tesseract === "undefined") {
     throw new Error("Motorul OCR nu s-a încărcat (verifică internetul). Poți folosi Mod Demo între timp. 🔌");
   }
-  showLoader(true, "Pregătim imaginea pentru citire... 🖼️", 2);
-  const source = (await preprocessImage(state.imageDataUrl)) || state.imageDataUrl;
+  const lang = $("ocrLang").value || "nor";
+  const psm  = $("ocrPsm").value || "3";
 
-  showLoader(true, "Pornim cititorul magic de litere... 🔍", 4);
-  const worker = await Tesseract.createWorker("nor", 1, {
+  showLoader(true, state.crop ? "Decupăm zona selectată și o curățăm... ✂️" : "Pregătim imaginea pentru citire... 🖼️", 2);
+  const source = (await preprocessImage(state.imageDataUrl, state.crop)) || state.imageDataUrl;
+
+  showLoader(true, "Pornim cititorul de litere... 🔍", 4);
+  const worker = await Tesseract.createWorker(lang, 1, {
     logger: (m) => {
       if (m.status === "recognizing text") {
-        showLoader(true, `Recunoaștem textul norvegian... ${Math.round(m.progress*100)}% 🔤`, 5 + m.progress*45);
-      } else if (m.status && m.status.includes("loading")) {
-        showLoader(true, "Pregătim dicționarul norvegian... 📥", 3);
+        showLoader(true, `Citim textul din imagine... ${Math.round(m.progress*100)}% 🔤`, 5 + m.progress*45);
+      } else if (m.status && (m.status.includes("loading") || m.status.includes("initial"))) {
+        showLoader(true, "Pregătim modelul de citire... 📥", 3);
       }
     }
   });
   try {
-    // preserve spacing so cuvintele nu se lipesc
-    await worker.setParameters({ preserve_interword_spaces: "1" });
+    await worker.setParameters({
+      preserve_interword_spaces: "1",
+      tessedit_pageseg_mode: psm,
+    });
     const { data: { text } } = await worker.recognize(source);
     return cleanupOcr(text);
   } finally {
@@ -1066,7 +1238,15 @@ $("clearBtn").addEventListener("click", () => {
   stagePlaceholder.style.display = "block";
   $("resultCard").style.display = "none";
   $("translateBtn").disabled = true;
+  $("extractBtn").disabled = true;
   resetZoom();
+  // reset crop mode
+  state.cropMode = false;
+  $("cropBtn").classList.remove("active");
+  $("cropBtn").textContent = "✂️ Selectează text";
+  $("viewerHint").textContent = "🔍 Trage pentru panoramare";
+  stage.classList.remove("cropping");
+  clearCrop();
   $("fileInput").value = ""; $("camInput").value = "";
   toast("Am șters tot. Poți începe o poveste nouă! 🧹", "ok");
 });
