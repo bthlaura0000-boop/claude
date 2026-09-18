@@ -714,7 +714,7 @@
       <div class="dropzone" id="dropzone">
         <span class="big-emoji">📚</span>
         <h3>Trage pozele paginilor aici</h3>
-        <p>poți adăuga toate paginile cărții deodată</p>
+        <p>adaugă toate paginile odată — sau în mai multe reprize (merge și 30+)</p>
         <div class="dz-btns">
           <button class="btn-lav" id="pickBtn" type="button">🖼️ Alege imagini</button>
           <button class="btn-pink" id="camBtn" type="button">📷 Fă o poză</button>
@@ -1055,27 +1055,60 @@ function addPage(dataUrl, mime, name){
   return p;
 }
 
-// Load one or many image files as pages (preserves order via placeholders)
-function handleFiles(fileList){
+// Read a file and downscale it so many phone photos don't exhaust memory.
+// Phone pictures are huge (often 4000px+, several MB); we cap the long side
+// so a whole 30+ page book fits comfortably, without hurting OCR quality.
+const MAX_DIM = 2000;
+function loadScaledDataURL(file){
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const original = reader.result;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const long = Math.max(img.width, img.height);
+          if (long <= MAX_DIM) { resolve({ dataUrl: original, mime: file.type || "image/png" }); return; }
+          const scale = MAX_DIM / long;
+          const cw = Math.round(img.width * scale), ch = Math.round(img.height * scale);
+          const cv = document.createElement("canvas");
+          cv.width = cw; cv.height = ch;
+          cv.getContext("2d").drawImage(img, 0, 0, cw, ch);
+          resolve({ dataUrl: cv.toDataURL("image/jpeg", 0.85), mime: "image/jpeg" });
+        } catch (_) { resolve({ dataUrl: original, mime: file.type || "image/png" }); }
+      };
+      img.onerror = () => resolve({ dataUrl: original, mime: file.type || "image/png" });
+      img.src = original;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Load one or many image files as pages (sequential + downscaled → works for 30+ pages).
+// You can also add pages in several batches; new pages are appended.
+async function handleFiles(fileList){
   const imgs = [...(fileList || [])].filter(f => f && f.type && f.type.startsWith("image/"));
   if (!imgs.length){ toast("Alege fișiere imagine 🖼️", "err"); return; }
   const base = state.pages.length;
-  imgs.forEach((f, idx) => {
-    addPage("", f.type, f.name);           // reserve slot now, keep order
-    const myIndex = base + idx;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (state.pages[myIndex]) state.pages[myIndex].dataUrl = e.target.result;
-      if (myIndex === state.active) showActivePage();
-      renderPages();
-    };
-    reader.readAsDataURL(f);
-  });
-  state.active = base;                     // jump to first newly added page
+  imgs.forEach((f) => addPage("", f.type, f.name)); // reserve ordered slots
+  state.active = base;
   $("pagesCard").style.display = "block";
   showActivePage();
   renderPages();
-  toast(imgs.length > 1 ? `${imgs.length} pagini adăugate 📚` : "Pagină adăugată! 📖", "ok");
+
+  const many = imgs.length > 2;
+  for (let idx = 0; idx < imgs.length; idx++){
+    if (many) showLoader(true, `Încărcăm paginile... ${idx+1}/${imgs.length} 📚`, ((idx)/imgs.length)*100);
+    const res = await loadScaledDataURL(imgs[idx]);
+    const pg = state.pages[base + idx];
+    if (pg && res){ pg.dataUrl = res.dataUrl; pg.mime = res.mime; }
+    if (base + idx === state.active) showActivePage();
+    renderPages();
+    await new Promise(r => setTimeout(r, 0)); // yield so the UI stays responsive
+  }
+  if (many) showLoader(false);
+  toast(imgs.length > 1 ? `${imgs.length} pagini adăugate 📚 (poți adăuga și mai multe)` : "Pagină adăugată! 📖", "ok");
 }
 
 // Show the active page in the viewer + its result (or empty state)
