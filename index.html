@@ -211,8 +211,204 @@
     .stage img{max-width:100% !important;transform:none !important;}
   }
 </style>
+<!-- ============ PREMIUM VISUAL LAYER (additive overrides + animations) ============ -->
+<style>
+  /* ---- Refined base & animated aurora backdrop ---- */
+  body{
+    background:linear-gradient(180deg,#fbf7ff 0%,#eef4ff 48%,#f2fbff 100%) !important;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:-15%;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(38% 38% at 18% 20%, rgba(178,141,255,.30), transparent 62%),
+      radial-gradient(42% 42% at 84% 14%, rgba(94,176,255,.26), transparent 62%),
+      radial-gradient(46% 46% at 78% 86%, rgba(79,209,165,.24), transparent 62%),
+      radial-gradient(42% 42% at 14% 90%, rgba(255,143,184,.26), transparent 62%);
+    filter:blur(36px);
+    animation:auroraDrift 20s ease-in-out infinite alternate;
+  }
+  @keyframes auroraDrift{
+    0%{transform:translate3d(0,0,0) scale(1)}
+    50%{transform:translate3d(1.5%,-2%,0) scale(1.06)}
+    100%{transform:translate3d(-1.5%,-3.5%,0) scale(1.1)}
+  }
+
+  /* ---- Entrance choreography (revealed after the intro) ---- */
+  .wrap{opacity:0;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+  @keyframes riseIn{from{opacity:0;transform:translateY(34px);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+  @keyframes floatSoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes popCard{0%{opacity:0;transform:translateY(18px) scale(.98)}60%{transform:translateY(-3px) scale(1.005)}100%{opacity:1;transform:none}}
+  @keyframes shimmerSweep{0%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+  @keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.95}}
+  @keyframes btnGlow{0%,100%{box-shadow:0 10px 30px rgba(255,143,184,.35),0 0 0 rgba(255,255,255,0)}50%{box-shadow:0 14px 46px rgba(178,141,255,.6),0 0 34px rgba(94,176,255,.45)}}
+  @keyframes brandFlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+
+  body.entered .wrap{animation:fadeUp .7s ease both;}
+  body.entered header.hero{animation:fadeUp .75s .04s cubic-bezier(.2,.7,.2,1) both;}
+  body.entered .layout>.card:nth-child(1){animation:fadeUp .8s .18s cubic-bezier(.2,.7,.2,1) both;}
+  body.entered .layout>.card:nth-child(2){animation:fadeUp .8s .3s cubic-bezier(.2,.7,.2,1) both;}
+  body.entered footer{animation:fadeUp .8s .44s ease both;}
+
+  /* ---- Glassmorphism cards ---- */
+  .card{
+    background:rgba(255,255,255,.70) !important;
+    backdrop-filter:blur(16px) saturate(1.25);
+    -webkit-backdrop-filter:blur(16px) saturate(1.25);
+    border:1px solid rgba(255,255,255,.85) !important;
+    border-radius:26px !important;
+    box-shadow:0 14px 44px rgba(120,90,180,.16), inset 0 1px 0 rgba(255,255,255,.85) !important;
+    transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s;
+  }
+  header.hero{
+    background:linear-gradient(135deg,rgba(255,255,255,.82),rgba(255,255,255,.6)) !important;
+    border:1px solid rgba(255,255,255,.9) !important;
+    border-radius:30px !important;
+    box-shadow:0 20px 60px rgba(120,90,180,.20), inset 0 1px 0 rgba(255,255,255,.9) !important;
+  }
+  .layout>.card:hover{transform:translateY(-4px);box-shadow:0 22px 60px rgba(120,90,180,.24), inset 0 1px 0 rgba(255,255,255,.85) !important;}
+
+  /* ---- Animated brand wordmark ---- */
+  .brand{
+    background:linear-gradient(90deg,var(--pink-deep),var(--lav-deep),var(--sky-deep),var(--mint-deep),var(--pink-deep)) !important;
+    background-size:200% auto !important;
+    -webkit-background-clip:text;background-clip:text;
+    animation:brandFlow 8s linear infinite;
+  }
+
+  /* ---- Buttons: shine sweep + lift ---- */
+  button{position:relative;overflow:hidden;transition:transform .2s cubic-bezier(.2,.7,.2,1), box-shadow .2s, filter .2s;}
+  button::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(120deg,transparent 32%,rgba(255,255,255,.55) 50%,transparent 68%);
+    transform:translateX(-140%);transition:transform .6s ease;
+  }
+  button:not(:disabled):hover::after{transform:translateX(140%);}
+  button:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.05);}
+  button:not(:disabled):active{transform:translateY(2px) !important;}
+
+  /* ---- Dropzone glow ---- */
+  .dropzone{transition:transform .3s cubic-bezier(.2,.7,.2,1), background .3s, border-color .3s, box-shadow .3s;}
+  .dropzone:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(178,141,255,.22);}
+  .dropzone.drag{box-shadow:0 0 0 6px rgba(255,143,184,.25), 0 20px 50px rgba(178,141,255,.3);}
+
+  /* ---- Tabs / mode buttons ---- */
+  .mode-btn{transition:transform .2s, background .3s, color .3s, box-shadow .3s;}
+  .mode-btn:not(.active):hover{transform:translateY(-2px);border-color:var(--lav-deep);}
+
+  /* ---- Story cards + view crossfade ---- */
+  .story{transition:box-shadow .3s;}
+  #viewRo,#viewParallel,#viewNo{animation:fadeUp .45s ease both;}
+  .story, textarea.ocr-edit{border-radius:20px !important;}
+
+  /* ---- Result card reveal + celebratory shimmer ---- */
+  .result-card.pop{animation:popCard .6s cubic-bezier(.2,.7,.2,1) both;}
+  .result-card{position:relative;}
+  .result-card .celebrate{
+    position:absolute;inset:0;border-radius:26px;overflow:hidden;pointer-events:none;z-index:3;
+  }
+  .result-card .celebrate::before{
+    content:"";position:absolute;top:0;left:0;width:60%;height:100%;
+    background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);
+    transform:translateX(-130%);
+  }
+  .result-card.pop .celebrate::before{animation:shimmerSweep 1.1s .15s ease both;}
+
+  /* ---- Premium dual-ring loader + shimmering progress ---- */
+  .loader .spin{
+    border:5px solid rgba(178,141,255,.25);border-top-color:var(--lav-deep);
+    border-right-color:var(--sky-deep);box-shadow:0 0 24px rgba(178,141,255,.3);
+  }
+  .progwrap{position:relative;}
+  .progbar{position:relative;overflow:hidden;}
+  .progbar::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);
+    transform:translateX(-100%);animation:shimmerSweep 1.3s linear infinite;
+  }
+
+  /* ---- Toast polish ---- */
+  .toast{border-radius:18px;box-shadow:0 16px 44px rgba(0,0,0,.28);backdrop-filter:blur(6px);}
+
+  /* =======================================================
+     CINEMATIC START (intro) SCREEN
+     ======================================================= */
+  body.intro-lock{overflow:hidden;height:100vh;}
+  .intro{
+    position:fixed;inset:0;z-index:10000;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    background:radial-gradient(130% 90% at 50% 120%, #1b2456 0%, #0c1230 58%, #06091c 100%);
+    transition:opacity .85s ease, transform .85s ease;
+  }
+  .intro.hide{opacity:0;transform:scale(1.07);pointer-events:none;}
+  .intro-aurora{position:absolute;inset:0;filter:blur(64px);opacity:.9;}
+  .aur{position:absolute;border-radius:50%;mix-blend-mode:screen;}
+  .aur.a1{width:64vw;height:64vw;left:-12vw;top:-24vw;background:radial-gradient(circle,#3ff0b0 0%,transparent 62%);animation:aurA 15s ease-in-out infinite alternate;}
+  .aur.a2{width:58vw;height:58vw;right:-14vw;top:-18vw;background:radial-gradient(circle,#5eb0ff 0%,transparent 62%);animation:aurB 18s ease-in-out infinite alternate;}
+  .aur.a3{width:70vw;height:70vw;left:8vw;bottom:-34vw;background:radial-gradient(circle,#b28dff 0%,transparent 60%);animation:aurC 17s ease-in-out infinite alternate;}
+  .aur.a4{width:52vw;height:52vw;right:-6vw;bottom:-24vw;background:radial-gradient(circle,#ff8fb8 0%,transparent 62%);animation:aurA 21s ease-in-out infinite alternate;}
+  @keyframes aurA{0%{transform:translate(0,0) scale(1)}100%{transform:translate(6%,8%) scale(1.15)}}
+  @keyframes aurB{0%{transform:translate(0,0) scale(1)}100%{transform:translate(-8%,10%) scale(1.2)}}
+  @keyframes aurC{0%{transform:translate(0,0) scale(1)}100%{transform:translate(5%,-8%) scale(1.12)}}
+  .intro-stars{position:absolute;inset:0;pointer-events:none;}
+  .intro-stars .star{position:absolute;background:#fff;border-radius:50%;box-shadow:0 0 6px rgba(255,255,255,.8);animation:twinkle 3s ease-in-out infinite;}
+  .intro-vignette{position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(4,6,18,.55) 100%);pointer-events:none;}
+
+  .intro-content{position:relative;z-index:3;padding:24px;max-width:760px;color:#fff;}
+  .intro-crest{font-size:clamp(56px,11vw,104px);filter:drop-shadow(0 8px 30px rgba(94,176,255,.55));animation:riseIn .9s .05s both, floatSoft 5s 1s ease-in-out infinite;}
+  .intro-title{
+    font-family:'Fredoka',sans-serif;font-weight:700;margin:6px 0 2px;line-height:1.02;
+    font-size:clamp(40px,9vw,92px);letter-spacing:.5px;
+    background:linear-gradient(90deg,#ffd1e3,#b28dff,#5eb0ff,#3ff0b0,#ffd1e3);
+    background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    text-shadow:0 6px 40px rgba(120,120,255,.25);
+    animation:riseIn 1s .22s both, brandFlow 9s linear infinite;
+  }
+  .intro-flags{font-size:clamp(24px,5vw,40px);margin:2px 0 12px;letter-spacing:6px;animation:riseIn 1s .38s both;}
+  .intro-flags .arrow{color:#9fd8ff;-webkit-text-fill-color:#9fd8ff;}
+  .intro-sub{font-family:'Quicksand',sans-serif;font-weight:600;font-size:clamp(15px,2.4vw,21px);color:#d7ddff;
+    margin:0 auto 26px;max-width:540px;animation:riseIn 1s .54s both;}
+  .intro-btn{
+    font-family:'Fredoka',sans-serif;font-weight:600;font-size:clamp(17px,2.6vw,21px);color:#fff;
+    padding:16px 40px;border:none;border-radius:100px;cursor:pointer;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#ff8fb8,#b28dff 55%,#5eb0ff);
+    box-shadow:0 12px 40px rgba(178,141,255,.5);
+    animation:riseIn 1s .7s both, btnGlow 3s 1.7s ease-in-out infinite;
+    transition:transform .25s cubic-bezier(.2,.7,.2,1);
+  }
+  .intro-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 32%,rgba(255,255,255,.6) 50%,transparent 68%);transform:translateX(-140%);transition:transform .6s;}
+  .intro-btn:hover{transform:translateY(-3px) scale(1.03);}
+  .intro-btn:hover::after{transform:translateX(140%);}
+  .intro-btn:active{transform:translateY(1px) scale(1);}
+  .intro-hint{font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;color:#9aa4d8;margin-top:16px;animation:riseIn 1s .86s both;}
+
+  @media print{ .intro{display:none !important;} .wrap{opacity:1 !important;} }
+
+  /* ---- Respect reduced-motion preferences ---- */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+    .wrap{opacity:1 !important;}
+    body::before,.intro-aurora,.intro-stars{animation:none !important;}
+  }
+</style>
 </head>
 <body>
+<!-- ============ CINEMATIC START SCREEN ============ -->
+<div class="intro" id="intro" role="dialog" aria-label="Ecran de start Cartea Fermecată">
+  <div class="intro-aurora"><span class="aur a1"></span><span class="aur a2"></span><span class="aur a3"></span><span class="aur a4"></span></div>
+  <div class="intro-stars" id="introStars"></div>
+  <div class="intro-vignette"></div>
+  <div class="intro-content">
+    <div class="intro-crest">🧚</div>
+    <h1 class="intro-title">Cartea Fermecată</h1>
+    <div class="intro-flags">🇳🇴 <span class="arrow">→</span> 🇷🇴</div>
+    <p class="intro-sub">Transformă paginile poveștilor norvegiene în basme calde, citite pe înțelesul celor mici — în limba română.</p>
+    <button class="intro-btn" id="introStart" type="button">Începe aventura ✨</button>
+    <p class="intro-hint">100% gratuit · fără cheie API · totul în browserul tău</p>
+  </div>
+</div>
+
 <div class="wrap">
 
   <header class="hero">
@@ -314,6 +510,7 @@
 
   <!-- Results -->
   <div class="card result-card" id="resultCard" style="display:none;">
+    <div class="celebrate" aria-hidden="true"></div>
     <div class="tabs" role="tablist">
       <button class="mode-btn active" data-mode="ro" type="button">🇷🇴 Doar Română</button>
       <button class="mode-btn" data-mode="parallel" type="button">🔀 Paralel (NO / RO)</button>
@@ -1069,9 +1266,14 @@ function applyResult(r) {
     $("vocabSection").style.display = "block";
   } else $("vocabSection").style.display = "none";
 
-  $("resultCard").style.display = "block";
+  const rc = $("resultCard");
+  rc.style.display = "block";
+  // replay the reveal + celebratory shimmer animation
+  rc.classList.remove("pop");
+  void rc.offsetWidth;
+  rc.classList.add("pop");
   setMode(state.mode);
-  $("resultCard").scrollIntoView({ behavior:"smooth", block:"start" });
+  rc.scrollIntoView({ behavior:"smooth", block:"start" });
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -1252,6 +1454,68 @@ $("clearBtn").addEventListener("click", () => {
 });
 
 $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey").click(); });
+</script>
+
+<!-- ============ CINEMATIC INTRO CONTROLLER ============ -->
+<script>
+(function(){
+  "use strict";
+  const intro = document.getElementById("intro");
+  const startBtn = document.getElementById("introStart");
+  const starsBox = document.getElementById("introStars");
+  if (!intro) return;
+
+  document.body.classList.add("intro-lock");
+
+  // Generate a twinkling starfield (pure DOM, no images/assets)
+  if (starsBox) {
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const count = reduce ? 40 : 110;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement("span");
+      s.className = "star";
+      const size = (Math.random() * 2.4 + 0.6).toFixed(2);
+      s.style.width = size + "px";
+      s.style.height = size + "px";
+      s.style.left = (Math.random() * 100).toFixed(2) + "%";
+      s.style.top = (Math.random() * 100).toFixed(2) + "%";
+      s.style.opacity = (Math.random() * 0.5 + 0.2).toFixed(2);
+      s.style.animationDelay = (Math.random() * 3).toFixed(2) + "s";
+      s.style.animationDuration = (Math.random() * 2.5 + 2).toFixed(2) + "s";
+      frag.appendChild(s);
+    }
+    starsBox.appendChild(frag);
+  }
+
+  let entered = false;
+  function enter(){
+    if (entered) return;
+    entered = true;
+    document.body.classList.add("entered");
+    intro.classList.add("hide");
+    document.body.classList.remove("intro-lock");
+    setTimeout(() => { if (intro && intro.parentNode) intro.parentNode.removeChild(intro); }, 900);
+  }
+
+  startBtn && startBtn.addEventListener("click", enter);
+  // Enter / Space also start the experience
+  window.addEventListener("keydown", (e) => {
+    if (!entered && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); enter(); }
+  });
+
+  // Subtle mouse parallax on the aurora (skipped for reduced motion / touch)
+  const canParallax = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const aurora = intro.querySelector(".intro-aurora");
+  if (canParallax && aurora) {
+    intro.addEventListener("mousemove", (e) => {
+      if (entered) return;
+      const dx = (e.clientX / window.innerWidth - 0.5) * 22;
+      const dy = (e.clientY / window.innerHeight - 0.5) * 22;
+      aurora.style.transform = `translate(${dx}px, ${dy}px)`;
+    });
+  }
+})();
 </script>
 </body>
 </html>
