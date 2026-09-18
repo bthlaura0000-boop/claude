@@ -433,6 +433,30 @@
   button:not(:disabled):hover{ filter:brightness(1.06) saturate(1.05); }
 
   /* =======================================================
+     SIMPLE ACTION MENU (sticky)
+     ======================================================= */
+  .menu{
+    position:sticky; top:10px; z-index:20; margin:14px auto 0; display:flex; flex-wrap:wrap;
+    gap:8px; justify-content:center; padding:8px; border-radius:100px;
+    background:rgba(255,255,255,.72); border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 10px 28px rgba(120,90,180,.16); backdrop-filter:blur(12px);
+  }
+  .menu-btn{
+    border:none; cursor:pointer; border-radius:100px; padding:11px 18px; color:#fff;
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:14px;
+    background:linear-gradient(135deg,var(--lav-deep),#9a6bff);
+    box-shadow:0 5px 0 rgba(0,0,0,.08); transition:transform .18s, filter .18s;
+  }
+  #mAddBtn{ background:linear-gradient(135deg,var(--mint-deep),#2fc490); }
+  #saveBtn{ background:linear-gradient(135deg,var(--sun-deep),#ffb703); color:#6b4b00; }
+  #printBookBtn{ background:linear-gradient(135deg,var(--sky-deep),#3f97ff); }
+  .menu-btn:hover{ transform:translateY(-2px); filter:brightness(1.06); }
+  .menu-btn:active{ transform:translateY(1px); }
+  .menu-btn:focus-visible{ outline:3px solid var(--sky-deep); outline-offset:3px; }
+  @media(max-width:560px){ .menu-btn{ font-size:13px; padding:10px 14px; } .menu{ top:6px; } }
+  body.theme-dark .menu{ background:rgba(28,34,64,.78); border-color:rgba(255,255,255,.12); box-shadow:0 12px 30px rgba(0,0,0,.5); }
+
+  /* =======================================================
      PAGES OF THE BOOK — thumbnail strip
      ======================================================= */
   .pages-head{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; }
@@ -706,8 +730,7 @@
     <span class="blob" style="left:10%;bottom:6%;animation-delay:2s;">🐻</span>
     <span class="blob" style="right:10%;bottom:8%;animation-delay:1.5s;">🧚</span>
     <h1 class="brand">🧚 Cartea Fermecată <span class="flag">🇳🇴→🇷🇴</span></h1>
-    <p class="tagline">Fotografiază o pagină de carte în norvegiană și o transformăm într-o poveste caldă în română!</p>
-    <div class="free-badge">✅ Funcționează 100% GRATUIT — fără cheie API!</div>
+    <p class="tagline">Traduce paginile cărților pentru copii, pe înțelesul celor mici.</p>
 
     <div class="engine-card card">
       <label for="engineSel">🌐 Motor de traducere:</label>
@@ -727,6 +750,14 @@
       <div class="hint" id="engineHint">Modul <b>Automat</b> citește textul direct în browser (OCR) și îl traduce prin servicii gratuite — nu ai nevoie de nicio cheie. Apasă <b>Demo</b> pentru un exemplu instant.</div>
     </div>
   </header>
+
+  <!-- Simple action menu -->
+  <nav class="menu" id="menu" aria-label="Meniu acțiuni">
+    <button class="menu-btn" id="mAddBtn" type="button">➕ Adaugă pagini</button>
+    <button class="menu-btn" id="translateAllBtn" type="button">🪄 Tradu tot</button>
+    <button class="menu-btn" id="saveBtn" type="button">💾 Salvează</button>
+    <button class="menu-btn" id="printBookBtn" type="button">🖨️ Printează</button>
+  </nav>
 
   <div class="layout">
     <!-- Upload -->
@@ -790,14 +821,8 @@
   <div class="card pages-card" id="pagesCard" style="display:none;">
     <div class="pages-head">
       <div class="section-title" style="margin:0;">📚 Paginile cărții (<span id="pageCount">0</span>)</div>
-      <div class="pages-actions">
-        <button class="btn-lav" id="translateAllBtn" type="button" title="Extrage și traduce fiecare pagină">🪄 Tradu toate paginile</button>
-        <button class="btn-mint" id="readBookBtn" type="button" title="Citește cu voce tare toată cartea, pagină cu pagină">📖🔊 Citește toată cartea</button>
-        <button class="btn-sun" id="saveBtn" type="button" title="Descarcă traducerea ca fișier pe care îl poți păstra și deschide oricând">💾 Salvează traducerea</button>
-        <button class="btn-ghost" id="printBookBtn" type="button" title="Deschide o versiune curată, gata de printat">🖨️ Printează cartea</button>
-      </div>
     </div>
-    <p class="pages-hint hint" style="margin:2px 0 12px;text-align:left;">Apasă o pagină pentru a o vedea și traduce. ✅ = tradusă, ◻️ = netradusă. Butoanele <b>Extrage</b> / <b>Extrage + Tradu</b> lucrează pe pagina selectată.</p>
+    <p class="pages-hint hint" style="margin:2px 0 12px;text-align:left;">Apasă o pagină pentru a o vedea și traduce. ✅ = tradusă · ◻️ = netradusă.</p>
     <div class="page-strip" id="pageStrip"></div>
   </div>
 
@@ -815,18 +840,6 @@
       <button class="mode-btn active" data-mode="ro" type="button">🇷🇴 Doar Română</button>
       <button class="mode-btn" data-mode="parallel" type="button">🔀 Paralel (NO / RO)</button>
       <button class="mode-btn" data-mode="no" type="button">🇳🇴 Text OCR Norvegian</button>
-    </div>
-
-    <!-- Audio controls -->
-    <div class="audio-bar no-print">
-      <button class="btn-mint" id="playBtn" type="button">▶️ Citește</button>
-      <button class="btn-sky" id="pauseBtn" type="button" disabled>⏸️ Pauză</button>
-      <button class="btn-pink" id="stopBtn" type="button" disabled>⏹️ Oprește</button>
-      <div class="speed">
-        🐢 <input type="range" id="rate" min="0.5" max="1.6" step="0.1" value="0.95"> 🐇
-        <span id="rateLabel">0.95×</span>
-      </div>
-      <button class="btn-ghost" id="printBtn" type="button">🖨️ Imprimă / Exportă PDF</button>
     </div>
 
     <!-- Story views -->
@@ -1896,20 +1909,6 @@ function voiceFor(bcp47) {
          allVoices.find(v => v.lang && v.lang.toLowerCase() === prim) || null;
 }
 
-// Languages of the currently shown page's result (fallback to the selectors)
-function resultLangs() {
-  const r = AP() && AP().result;
-  const srcKey = (r && r.src) || $("srcLang").value;
-  const tgtKey = (r && r.tgt) || $("tgtLang").value;
-  return { src: LANGS[srcKey] || srcLang(), tgt: LANGS[tgtKey] || tgtLang() };
-}
-
-function currentSpeakText() {
-  const p = AP();
-  if (!p || !p.result) return "";
-  return state.mode === "no" ? p.result.no : p.result.ro;
-}
-
 // Speak a single word in a given language key (vocabulary 🔊 = source language)
 function speakWord(text, langKey) {
   if (!synth || !text) return;
@@ -1918,84 +1917,11 @@ function speakWord(text, langKey) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = L.tts;
   const v = voiceFor(L.tts); if (v) u.voice = v;
-  u.rate = Math.min(0.95, parseFloat($("rate").value)); // a touch slower so kids catch it
+  u.rate = 0.9; // a touch slower so kids catch it
   u.pitch = 1.0;
   synth.speak(u);
   if (!v) toast(`Nu am găsit o voce ${L.name.toLowerCase()} instalată — se folosește vocea implicită 🔊`, "");
 }
-function speak() {
-  if (!synth) { toast("Browserul tău nu suportă citirea vocală 😔", "err"); return; }
-  if (synth.paused) { synth.resume(); setAudioState("playing"); return; }
-  const text = currentSpeakText();
-  if (!text) { toast("Nu există text de citit.", "err"); return; }
-  const L = resultLangs();
-  const lang = state.mode === "no" ? L.src : L.tgt;
-  synth.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang.tts;
-  const v = voiceFor(lang.tts); if (v) u.voice = v;
-  u.rate = parseFloat($("rate").value);
-  u.pitch = 1.05;
-  u.onend = () => setAudioState("stopped");
-  u.onerror = () => setAudioState("stopped");
-  synth.speak(u);
-  setAudioState("playing");
-}
-function setAudioState(s) {
-  const playing = s === "playing";
-  $("playBtn").disabled = playing;
-  $("pauseBtn").disabled = !playing;
-  $("stopBtn").disabled = s === "stopped";
-}
-$("playBtn").addEventListener("click", speak);
-$("pauseBtn").addEventListener("click", () => { if (synth && synth.speaking){ synth.pause(); setAudioState("paused"); }});
-$("stopBtn").addEventListener("click", () => { readingBook = false; if (synth) synth.cancel(); setAudioState("stopped"); });
-$("rate").addEventListener("input", () => $("rateLabel").textContent = parseFloat($("rate").value).toFixed(2) + "×");
-
-/* =========================================================
-   READ THE WHOLE BOOK ALOUD (Romanian, page by page)
-   ========================================================= */
-let readingBook = false, bookQueue = [], bookPos = 0;
-
-function readWholeBook(){
-  if (!synth) { toast("Browserul tău nu suportă citirea vocală 😔", "err"); return; }
-  // resume if paused mid-book
-  if (readingBook && synth.paused) { synth.resume(); setAudioState("playing"); return; }
-  const idxs = state.pages.map((p, i) => i).filter(i => state.pages[i].result && state.pages[i].result.ro);
-  if (!idxs.length) { toast("Tradu cel puțin o pagină înainte de a asculta cartea 📖", "err"); return; }
-  synth.cancel();
-  bookQueue = idxs;
-  bookPos = 0;
-  readingBook = true;
-  state.mode = "ro";
-  speakBookPage();
-  toast(`Citesc cartea — ${idxs.length} ${idxs.length===1?"pagină":"pagini"} 📖🔊`, "ok");
-}
-
-function speakBookPage(){
-  if (!readingBook) return;
-  if (bookPos >= bookQueue.length) {
-    readingBook = false;
-    setAudioState("stopped");
-    toast("Am terminat de citit cartea 🎉", "ok");
-    return;
-  }
-  const i = bookQueue[bookPos];
-  selectPage(i);                       // show + highlight the page being read
-  setMode("ro");
-  const r = state.pages[i].result;
-  const L = LANGS[r.tgt] || tgtLang();
-  const u = new SpeechSynthesisUtterance(r.ro);
-  u.lang = L.tts;
-  const v = voiceFor(L.tts); if (v) u.voice = v;
-  u.rate = parseFloat($("rate").value);
-  u.pitch = 1.05;
-  u.onend = () => { if (readingBook) { bookPos++; speakBookPage(); } };
-  u.onerror = () => { if (readingBook) { bookPos++; speakBookPage(); } };
-  synth.speak(u);
-  setAudioState("playing");
-}
-$("readBookBtn").addEventListener("click", readWholeBook);
 
 /* =========================================================
    DEMO MODE — preloaded page (instant, no key, no network)
@@ -2106,7 +2032,6 @@ $("retransBtn").addEventListener("click", async () => {
 });
 
 $("clearBtn").addEventListener("click", () => {
-  readingBook = false;
   if (synth) synth.cancel();
   state.pages = [];
   state.active = -1;
@@ -2256,7 +2181,7 @@ function printBook(){
   else w.onload = () => setTimeout(go, 300);
 }
 $("printBookBtn").addEventListener("click", printBook);
-$("printBtn").addEventListener("click", printBook);
+$("mAddBtn").addEventListener("click", () => $("fileInput").click());
 
 $("apiKey").addEventListener("keydown", e => { if (e.key === "Enter") $("saveKey").click(); });
 
