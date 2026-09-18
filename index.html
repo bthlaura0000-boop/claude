@@ -1021,7 +1021,7 @@ function toast(msg, type="") {
   if (savedKey) $("apiKey").value = savedKey;
   const savedModel = localStorage.getItem("gemini_model");
   if (savedModel) $("modelSel").value = savedModel;
-  const savedEngine = localStorage.getItem("cf_engine") || "auto";
+  const savedEngine = localStorage.getItem("cf_engine") || (savedKey ? "gemini" : "auto");
   $("engineSel").value = savedEngine;
   updateEngineUI();
 })();
@@ -1029,8 +1029,8 @@ function updateEngineUI(){
   const eng = $("engineSel").value;
   $("geminiOpts").style.display = eng === "gemini" ? "flex" : "none";
   $("engineHint").innerHTML = eng === "gemini"
-    ? 'Modul <b>Gemini</b> oferă o traducere mai poetică, dar are nevoie de o cheie gratuită de la <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Cheia rămâne doar în browserul tău.'
-    : 'Modul <b>Automat</b> citește textul direct în browser (OCR) și îl traduce prin servicii gratuite — nu ai nevoie de nicio cheie. Apasă <b>Demo</b> pentru un exemplu instant.';
+    ? '🤖 <b>Gemini „vede" imaginea</b> și citește chiar și scrisul stilizat din cărțile de copii — cel mai precis mod. Ia o cheie <b>gratuită</b> de la <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>, lipește-o mai sus și apasă <b>Salvează</b>. Cheia rămâne doar în browserul tău.'
+    : 'Modul <b>Automat</b> traduce gratuit, fără cheie. Dacă textul nu iese corect (cărțile de copii au scris greu de citit), alege <b>🤖 Gemini</b> — citește imaginile mult mai bine.';
 }
 $("engineSel").addEventListener("change", () => {
   localStorage.setItem("cf_engine", $("engineSel").value);
@@ -1040,7 +1040,15 @@ $("saveKey").addEventListener("click", () => {
   const k = $("apiKey").value.trim();
   localStorage.setItem("gemini_api_key", k);
   localStorage.setItem("gemini_model", $("modelSel").value);
-  toast(k ? "Cheia a fost salvată local! 🔐" : "Cheie ștearsă.", "ok");
+  if (k) {
+    // once a key is added, use Gemini (reads images far better)
+    $("engineSel").value = "gemini";
+    localStorage.setItem("cf_engine", "gemini");
+    updateEngineUI();
+    toast("Cheia salvată! Folosesc acum Gemini — citește mult mai bine imaginile 🤖✨", "ok");
+  } else {
+    toast("Cheie ștearsă.", "ok");
+  }
 });
 $("modelSel").addEventListener("change", () =>
   localStorage.setItem("gemini_model", $("modelSel").value));
@@ -1612,7 +1620,7 @@ async function ocrCloud(srcKeyOrAuto){
   const page = AP();
   if (!page || !page.dataUrl) throw new Error("Nicio pagină de citit. Adaugă o imagine 📷");
   showLoader(true, page.crop ? "Pregătim zona selectată... ✂️" : "Pregătim imaginea... ☁️", 20);
-  const dataUrl = (await cropAndDownscale(page.dataUrl, page.crop, 1600, 0.7)) || page.dataUrl;
+  const dataUrl = (await cropAndDownscale(page.dataUrl, page.crop, 2000, 0.6)) || page.dataUrl;
   const isAuto = srcKeyOrAuto === "auto";
   const latin = isAuto || CLOUD_LATIN.has(srcKeyOrAuto);
   const form = new FormData();
