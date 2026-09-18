@@ -754,6 +754,7 @@
       <div class="section-title" style="margin:0;">📚 Paginile cărții (<span id="pageCount">0</span>)</div>
       <div class="pages-actions">
         <button class="btn-lav" id="translateAllBtn" type="button" title="Extrage și traduce fiecare pagină">🪄 Tradu toate paginile</button>
+        <button class="btn-mint" id="readBookBtn" type="button" title="Citește cu voce tare toată cartea, pagină cu pagină">📖🔊 Citește toată cartea</button>
         <button class="btn-sun" id="saveBtn" type="button" title="Descarcă traducerea ca fișier pe care îl poți păstra și deschide oricând">💾 Salvează traducerea</button>
         <button class="btn-ghost" id="printBookBtn" type="button" title="Deschide o versiune curată, gata de printat">🖨️ Printează cartea</button>
       </div>
@@ -1715,8 +1716,52 @@ function setAudioState(s) {
 }
 $("playBtn").addEventListener("click", speak);
 $("pauseBtn").addEventListener("click", () => { if (synth && synth.speaking){ synth.pause(); setAudioState("paused"); }});
-$("stopBtn").addEventListener("click", () => { if (synth) synth.cancel(); setAudioState("stopped"); });
+$("stopBtn").addEventListener("click", () => { readingBook = false; if (synth) synth.cancel(); setAudioState("stopped"); });
 $("rate").addEventListener("input", () => $("rateLabel").textContent = parseFloat($("rate").value).toFixed(2) + "×");
+
+/* =========================================================
+   READ THE WHOLE BOOK ALOUD (Romanian, page by page)
+   ========================================================= */
+let readingBook = false, bookQueue = [], bookPos = 0;
+
+function readWholeBook(){
+  if (!synth) { toast("Browserul tău nu suportă citirea vocală 😔", "err"); return; }
+  // resume if paused mid-book
+  if (readingBook && synth.paused) { synth.resume(); setAudioState("playing"); return; }
+  const idxs = state.pages.map((p, i) => i).filter(i => state.pages[i].result && state.pages[i].result.ro);
+  if (!idxs.length) { toast("Tradu cel puțin o pagină înainte de a asculta cartea 📖", "err"); return; }
+  synth.cancel();
+  bookQueue = idxs;
+  bookPos = 0;
+  readingBook = true;
+  state.mode = "ro";
+  speakBookPage();
+  toast(`Citesc cartea — ${idxs.length} ${idxs.length===1?"pagină":"pagini"} 📖🔊`, "ok");
+}
+
+function speakBookPage(){
+  if (!readingBook) return;
+  if (bookPos >= bookQueue.length) {
+    readingBook = false;
+    setAudioState("stopped");
+    toast("Am terminat de citit cartea 🎉", "ok");
+    return;
+  }
+  const i = bookQueue[bookPos];
+  selectPage(i);                       // show + highlight the page being read
+  setMode("ro");
+  const r = state.pages[i].result;
+  const u = new SpeechSynthesisUtterance(r.ro);
+  u.lang = "ro-RO";
+  if (roVoice) u.voice = roVoice;
+  u.rate = parseFloat($("rate").value);
+  u.pitch = 1.05;
+  u.onend = () => { if (readingBook) { bookPos++; speakBookPage(); } };
+  u.onerror = () => { if (readingBook) { bookPos++; speakBookPage(); } };
+  synth.speak(u);
+  setAudioState("playing");
+}
+$("readBookBtn").addEventListener("click", readWholeBook);
 
 /* =========================================================
    DEMO MODE — preloaded page (instant, no key, no network)
@@ -1814,6 +1859,7 @@ $("retransBtn").addEventListener("click", async () => {
 });
 
 $("clearBtn").addEventListener("click", () => {
+  readingBook = false;
   if (synth) synth.cancel();
   state.pages = [];
   state.active = -1;
