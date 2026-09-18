@@ -77,6 +77,19 @@
   .meal-opt:hover{border-color:var(--tomato);}
   .meal-opt.active{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(232,98,58,.28);}
 
+  /* Preferințe (comutator) */
+  .pref-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:-8px 0 22px;}
+  .pref-row .plabel{color:var(--ink-soft);font-size:14px;font-weight:600;}
+  .diet-opt{
+    cursor:pointer;border:2px solid rgba(92,138,58,.3);background:#fff;color:var(--herb-deep);
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:9px 16px;border-radius:100px;
+    display:inline-flex;align-items:center;gap:8px;transition:.15s;
+  }
+  .diet-opt:hover{border-color:var(--herb);}
+  .diet-opt.active{background:linear-gradient(135deg,var(--herb),var(--herb-deep));color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(92,138,58,.28);}
+  .diet-opt .check{font-size:12px;opacity:0;transition:.15s;}
+  .diet-opt.active .check{opacity:1;}
+
   /* Selector porții */
   .portions-row{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
   .stepper{display:inline-flex;align-items:center;gap:2px;background:#fff;border:2px solid var(--line);border-radius:100px;padding:4px;}
@@ -227,6 +240,11 @@
       <button class="meal-opt" data-meal="desert">🍰 Desert</button>
     </div>
 
+    <div class="pref-row">
+      <span class="plabel">Preferință:</span>
+      <button class="diet-opt" id="vegBtn" aria-pressed="false">🥕 Vegetarian <span class="check">✓</span></button>
+    </div>
+
     <p class="label"><span class="step-num">2</span> Câte porții?</p>
     <div class="portions-row">
       <div class="stepper">
@@ -314,6 +332,7 @@
   // ---------- Stare ----------
   var ingredients = [];
   var meal = "prânz";
+  var vegetarian = false;
   var portions = 2;
   var MIN_PORT = 1, MAX_PORT = 12;
   var busy = false;
@@ -321,6 +340,7 @@
   // ---------- Elemente ----------
   var $ = function(id){ return document.getElementById(id); };
   var mealRow = $("mealRow");
+  var vegBtn = $("vegBtn");
   var portMinus = $("portMinus"), portPlus = $("portPlus"), portVal = $("portVal"), portLabel = $("portLabel");
   var chipField = $("chipField"), ingInput = $("ingInput");
   var cookBtn = $("cookBtn"), surpriseBtn = $("surpriseBtn"), clearBtn = $("clearBtn");
@@ -336,6 +356,13 @@
     mealRow.querySelectorAll(".meal-opt").forEach(function(b){ b.classList.remove("active"); });
     btn.classList.add("active");
     meal = btn.getAttribute("data-meal");
+  });
+
+  // ---------- Comutator vegetarian ----------
+  vegBtn.addEventListener("click", function(){
+    vegetarian = !vegetarian;
+    vegBtn.classList.toggle("active", vegetarian);
+    vegBtn.setAttribute("aria-pressed", vegetarian ? "true" : "false");
   });
 
   // ---------- Selector porții ----------
@@ -442,6 +469,7 @@
       "Persoana are aceste ingrediente la îndemână: " + ingStr + ".",
       "Felul trebuie să fie potrivit pentru: " + meal + ".",
       "Rețeta trebuie calculată pentru " + portions + (portions === 1 ? " porție" : " porții") + ", iar cantitatile din pași să fie pe măsură.",
+      (vegetarian ? "IMPORTANT: rețeta trebuie să fie VEGETARIANĂ — fără carne, pește sau fructe de mare. Dacă în lista de ingrediente există așa ceva, ignoră-le și propune o variantă vegetariană." : ""),
       creativity,
       "Reguli:",
       "- Folosește în MARE PARTE ingredientele din listă. Poți presupune că sunt disponibile lucruri de bază (sare, piper, ulei, apă, unt).",
@@ -539,6 +567,13 @@
     bm.className = "badge meal";
     bm.textContent = "🍴 " + capitalize(meal);
     dishBadges.appendChild(bm);
+
+    if(vegetarian){
+      var bv = document.createElement("span");
+      bv.className = "badge meal";
+      bv.textContent = "🥕 Vegetarian";
+      dishBadges.appendChild(bv);
+    }
 
     if(r.time && String(r.time).trim()){
       var bt = document.createElement("span");
