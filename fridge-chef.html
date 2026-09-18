@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍳 Bucătarul din Frigider — Gătește ceva bun din ce ai deja acasă</title>
+<meta name="description" content="Scrie ce ai prin frigider și primești o rețetă gustoasă pe care chiar o poți face.">
+<meta name="theme-color" content="#e8623a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbf3e9;
+    --bg-2:#f6e7d4;
+    --card:#fffdfa;
+    --ink:#3a2c22;
+    --ink-soft:#8a7663;
+    --line:#ecdcc6;
+    --tomato:#e8623a;
+    --tomato-deep:#cf4a24;
+    --herb:#5c8a3a;
+    --herb-deep:#4a7130;
+    --butter:#f2b134;
+    --cream:#fff7ec;
+    --radius:20px;
+    --shadow:0 14px 40px rgba(120,74,38,.14);
+    --shadow-sm:0 6px 18px rgba(120,74,38,.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 8%, rgba(242,177,52,.20) 0, transparent 40%),
+      radial-gradient(circle at 88% 4%, rgba(232,98,58,.16) 0, transparent 42%),
+      radial-gradient(circle at 82% 92%, rgba(92,138,58,.16) 0, transparent 46%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{font-family:'Fraunces',Georgia,serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:26px 18px 90px;}
+
+  /* Antet */
+  header.hero{text-align:center;padding:10px 8px 4px;}
+  .logo{font-size:clamp(40px,8vw,64px);line-height:1;display:inline-block;filter:drop-shadow(0 8px 16px rgba(232,98,58,.25));animation:bob 4s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+  .brand{font-size:clamp(30px,6vw,50px);font-weight:700;margin:6px 0 0;letter-spacing:-.5px;color:var(--ink);}
+  .brand .accent{color:var(--tomato);}
+  .tagline{margin:8px auto 0;color:var(--ink-soft);font-size:clamp(14px,2.2vw,18px);max-width:540px;font-weight:500;}
+
+  /* Carduri */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:22px;
+  }
+  .panel{margin-top:22px;}
+
+  .label{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 4px;display:flex;align-items:center;gap:9px;}
+  .sub{color:var(--ink-soft);font-size:14px;margin:0 0 16px;}
+  .step-num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--tomato);color:#fff;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;flex:0 0 auto;}
+
+  /* Selector masă */
+  .meal-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;}
+  .meal-opt{
+    cursor:pointer;border:2px solid var(--line);background:#fff;color:var(--ink);
+    font-family:'Inter',sans-serif;font-weight:600;font-size:15px;padding:11px 18px;border-radius:100px;
+    display:inline-flex;align-items:center;gap:8px;transition:.15s;
+  }
+  .meal-opt:hover{border-color:var(--tomato);}
+  .meal-opt.active{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(232,98,58,.28);}
+
+  /* Preferințe (comutator) */
+  .pref-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:-8px 0 22px;}
+  .pref-row .plabel{color:var(--ink-soft);font-size:14px;font-weight:600;}
+  .diet-opt{
+    cursor:pointer;border:2px solid rgba(92,138,58,.3);background:#fff;color:var(--herb-deep);
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:9px 16px;border-radius:100px;
+    display:inline-flex;align-items:center;gap:8px;transition:.15s;
+  }
+  .diet-opt:hover{border-color:var(--herb);}
+  .diet-opt.active{background:linear-gradient(135deg,var(--herb),var(--herb-deep));color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(92,138,58,.28);}
+  .diet-opt .check{font-size:12px;opacity:0;transition:.15s;}
+  .diet-opt.active .check{opacity:1;}
+
+  /* Selector porții */
+  .portions-row{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+  .stepper{display:inline-flex;align-items:center;gap:2px;background:#fff;border:2px solid var(--line);border-radius:100px;padding:4px;}
+  .stepper button{
+    all:unset;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;
+    font-size:22px;font-weight:700;color:var(--tomato-deep);line-height:1;transition:.15s;
+  }
+  .stepper button:hover{background:var(--tomato);color:#fff;}
+  .stepper button:disabled{color:var(--line);cursor:not-allowed;background:transparent;}
+  .stepper .val{min-width:54px;text-align:center;font-family:'Fraunces',serif;font-weight:700;font-size:20px;color:var(--ink);}
+  .portions-row .plabel{color:var(--ink-soft);font-size:14px;font-weight:600;}
+
+  /* Câmp ingrediente */
+  .chip-field{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+    border:2px solid var(--line);border-radius:16px;background:var(--cream);
+    padding:10px 12px;transition:border-color .2s, box-shadow .2s;cursor:text;
+  }
+  .chip-field:focus-within{border-color:var(--tomato);box-shadow:0 0 0 4px rgba(232,98,58,.14);}
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);
+    color:var(--ink);font-size:14px;font-weight:600;padding:6px 8px 6px 12px;border-radius:100px;
+    box-shadow:var(--shadow-sm);animation:pop .18s ease;
+  }
+  @keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+  .chip button{
+    all:unset;cursor:pointer;width:20px;height:20px;display:grid;place-items:center;border-radius:50%;
+    color:var(--ink-soft);font-size:15px;line-height:1;transition:.15s;
+  }
+  .chip button:hover{background:var(--tomato);color:#fff;}
+  .chip-field input{
+    flex:1;min-width:160px;border:none;outline:none;background:transparent;font:inherit;font-size:15px;
+    color:var(--ink);padding:6px 4px;
+  }
+  .chip-field input::placeholder{color:var(--ink-soft);opacity:.8;}
+
+  .suggest-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;}
+  .suggest-row .hint-lite{color:var(--ink-soft);font-size:13px;margin-right:2px;}
+  .quick{
+    all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--herb-deep);
+    background:rgba(92,138,58,.10);border:1px solid rgba(92,138,58,.22);
+    padding:5px 12px;border-radius:100px;transition:.15s;
+  }
+  .quick:hover{background:var(--herb);color:#fff;border-color:transparent;}
+
+  /* Butoane */
+  .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;}
+  button.btn{
+    cursor:pointer;border:none;border-radius:14px;padding:15px 22px;font-size:16px;font-weight:700;
+    font-family:'Inter',sans-serif;color:#fff;display:inline-flex;align-items:center;gap:10px;
+    transition:transform .15s, box-shadow .2s, filter .2s;position:relative;overflow:hidden;
+  }
+  button.btn:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.3);}
+  button.btn:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.04);}
+  button.btn:not(:disabled):active{transform:translateY(1px);}
+  .btn-primary{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));box-shadow:0 10px 24px rgba(232,98,58,.34);flex:1;min-width:220px;justify-content:center;}
+  .btn-surprise{background:linear-gradient(135deg,var(--butter),#e69516);color:#5a3d05;box-shadow:0 10px 24px rgba(242,177,52,.36);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);box-shadow:none;padding:15px 16px;}
+  .btn-ghost:not(:disabled):hover{color:var(--ink);border-color:var(--ink-soft);filter:none;}
+  .btn .shine{position:absolute;inset:0;background:linear-gradient(120deg,transparent 34%,rgba(255,255,255,.45) 50%,transparent 66%);transform:translateX(-140%);}
+  button.btn:not(:disabled):hover .shine{transition:transform .6s ease;transform:translateX(140%);}
+
+  /* Încărcare */
+  .loader{display:none;text-align:center;padding:34px 20px;}
+  .loader.show{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .pan{font-size:52px;display:inline-block;animation:sizzle .9s ease-in-out infinite;}
+  @keyframes sizzle{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-4px)}}
+  .loader p{margin:14px 0 0;font-weight:600;color:var(--ink-soft);}
+  .loader .dots::after{content:"";animation:dots 1.4s steps(4,end) infinite;}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}100%{content:""}}
+
+  /* Rezultat */
+  #result{display:none;}
+  #result.show{display:block;animation:riseIn .5s cubic-bezier(.2,.7,.2,1) both;}
+  @keyframes riseIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+  .dish-head{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:18px;}
+  .dish-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:100px;}
+  .badge.surprise{background:linear-gradient(135deg,var(--butter),#e69516);color:#5a3d05;}
+  .badge.meal{background:rgba(92,138,58,.12);color:var(--herb-deep);}
+  .badge.time{background:rgba(232,98,58,.12);color:var(--tomato-deep);}
+  .badge.meta{background:var(--cream);color:var(--ink-soft);border:1px solid var(--line);}
+  .dish-name{font-size:clamp(26px,5vw,38px);font-weight:700;margin:2px 0 8px;line-height:1.1;color:var(--ink);}
+  .dish-blurb{color:var(--ink-soft);font-size:16px;font-style:italic;font-family:'Fraunces',serif;margin:0;}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  @media(max-width:620px){.cols{grid-template-columns:1fr;}}
+  .box{border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:var(--cream);}
+  .box h3{margin:0 0 12px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--ink);}
+  .box.uses{background:rgba(92,138,58,.07);border-color:rgba(92,138,58,.22);}
+  .box.extras{background:rgba(232,98,58,.06);border-color:rgba(232,98,58,.2);}
+  .ing-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+  .ing-list li{display:flex;align-items:flex-start;gap:10px;font-size:15px;font-weight:500;}
+  .ing-list li .mk{flex:0 0 auto;margin-top:1px;font-size:14px;}
+  .uses .mk{color:var(--herb);}
+  .extras .mk{color:var(--tomato);}
+  .empty-extras{color:var(--ink-soft);font-style:italic;font-size:14px;}
+
+  .steps-title{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:4px 0 14px;display:flex;align-items:center;gap:9px;}
+  ol.steps{list-style:none;counter-reset:step;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;}
+  ol.steps li{counter-increment:step;position:relative;padding-left:52px;font-size:15.5px;line-height:1.6;min-height:36px;display:flex;align-items:center;}
+  ol.steps li::before{
+    content:counter(step);position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));color:#fff;font-family:'Fraunces',serif;
+    font-weight:700;font-size:16px;display:grid;place-items:center;box-shadow:0 5px 12px rgba(232,98,58,.3);
+  }
+
+  .result-foot{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line);}
+  .result-foot button{cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:11px 18px;font-weight:600;font-size:14px;font-family:'Inter',sans-serif;transition:.15s;display:inline-flex;align-items:center;gap:8px;}
+  .result-foot button:hover{border-color:var(--tomato);color:var(--tomato-deep);}
+  .result-foot button.again{background:linear-gradient(135deg,var(--tomato),var(--tomato-deep));color:#fff;border-color:transparent;}
+  .result-foot button.again:hover{color:#fff;filter:brightness(1.05);}
+
+  /* Notificări */
+  .notice{display:none;margin-top:16px;padding:14px 16px;border-radius:14px;font-size:14px;font-weight:500;}
+  .notice.show{display:block;animation:fade .25s ease;}
+  .notice.err{background:#fdece7;border:1px solid #f4c3b4;color:#a5391c;}
+  .notice.warn{background:#fff6e0;border:1px solid #f2d98c;color:#8a6410;}
+  .notice b{font-weight:700;}
+
+  footer{text-align:center;margin-top:34px;color:var(--ink-soft);font-size:13px;line-height:1.7;}
+  footer .heart{color:var(--tomato);}
+
+  @media print{
+    body{background:#fff;}
+    .panel:not(#resultPanel),.actions,footer,.result-foot,.loader{display:none !important;}
+    .card{box-shadow:none;border:1px solid #ddd;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="logo">🍳</span>
+    <h1 class="brand">Bucătarul din <span class="accent">Frigider</span></h1>
+    <p class="tagline">Spune-mi ce ai prin bucătărie și îți propun o rețetă gustoasă pe care chiar o poți face. Simplu și gratuit.</p>
+  </header>
+
+  <!-- Panou de introducere -->
+  <section class="card panel" id="inputPanel">
+
+    <p class="label"><span class="step-num">1</span> Pentru ce masă?</p>
+    <div class="meal-row" id="mealRow">
+      <button class="meal-opt" data-meal="mic dejun">☕ Mic dejun</button>
+      <button class="meal-opt active" data-meal="prânz">🍽️ Prânz</button>
+      <button class="meal-opt" data-meal="cină">🌙 Cină</button>
+      <button class="meal-opt" data-meal="desert">🍰 Desert</button>
+    </div>
+
+    <div class="pref-row">
+      <span class="plabel">Preferință:</span>
+      <button class="diet-opt" id="vegBtn" aria-pressed="false">🥕 Vegetarian <span class="check">✓</span></button>
+    </div>
+
+    <p class="label"><span class="step-num">2</span> Câte porții?</p>
+    <div class="portions-row">
+      <div class="stepper">
+        <button type="button" id="portMinus" aria-label="Mai puține porții">−</button>
+        <span class="val" id="portVal">2</span>
+        <button type="button" id="portPlus" aria-label="Mai multe porții">+</button>
+      </div>
+      <span class="plabel" id="portLabel">porții</span>
+    </div>
+
+    <p class="label"><span class="step-num">3</span> Ce ai prin casă?</p>
+    <p class="sub">Adaugă ingredientele pe rând — apasă <b>Enter</b> sau virgulă după fiecare.</p>
+
+    <div class="chip-field" id="chipField">
+      <input type="text" id="ingInput" placeholder="ex: ouă, spanac, cașcaval…" autocomplete="off" spellcheck="false" aria-label="Adaugă un ingredient">
+    </div>
+
+    <div class="suggest-row">
+      <span class="hint-lite">Adaugă rapid:</span>
+      <button class="quick" data-add="ouă">ouă</button>
+      <button class="quick" data-add="ceapă">ceapă</button>
+      <button class="quick" data-add="usturoi">usturoi</button>
+      <button class="quick" data-add="orez">orez</button>
+      <button class="quick" data-add="roșii">roșii</button>
+      <button class="quick" data-add="pui">pui</button>
+      <button class="quick" data-add="paste">paste</button>
+      <button class="quick" data-add="cartofi">cartofi</button>
+      <button class="quick" data-add="brânză">brânză</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="cookBtn"><span class="shine"></span>🍽️ Găsește o rețetă</button>
+      <button class="btn btn-surprise" id="surpriseBtn"><span class="shine"></span>✨ Surprinde-mă</button>
+      <button class="btn btn-ghost" id="clearBtn">Șterge</button>
+    </div>
+  </section>
+
+  <div class="notice" id="notice"></div>
+
+  <!-- Încărcare -->
+  <div class="loader panel" id="loader">
+    <span class="pan">🍳</span>
+    <p id="loaderText">Caut prin frigider<span class="dots"></span></p>
+  </div>
+
+  <!-- Rezultat -->
+  <section class="card panel" id="result">
+    <div id="resultPanel">
+      <div class="dish-head">
+        <div class="dish-badges" id="dishBadges"></div>
+        <h2 class="dish-name" id="dishName"></h2>
+        <p class="dish-blurb" id="dishBlurb"></p>
+      </div>
+
+      <div class="cols">
+        <div class="box uses">
+          <h3>🥗 Din ce ai tu</h3>
+          <ul class="ing-list" id="usesList"></ul>
+        </div>
+        <div class="box extras">
+          <h3>🛒 Ce îți mai recomand</h3>
+          <ul class="ing-list" id="extrasList"></ul>
+        </div>
+      </div>
+
+      <p class="steps-title">👩‍🍳 Cum se prepară</p>
+      <ol class="steps" id="stepsList"></ol>
+
+      <div class="result-foot">
+        <button class="again" id="againBtn">🔄 Altă idee</button>
+        <button id="printBtn">🖨️ Printează rețeta</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Făcut cu <span class="heart">♥</span> și un frigider bine aprovizionat · Rețetele sunt generate de inteligență artificială — verifică singur timpii de gătire, alergenii și siguranța alimentară.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Stare ----------
+  var ingredients = [];
+  var meal = "prânz";
+  var vegetarian = false;
+  var portions = 2;
+  var MIN_PORT = 1, MAX_PORT = 12;
+  var busy = false;
+
+  // ---------- Elemente ----------
+  var $ = function(id){ return document.getElementById(id); };
+  var mealRow = $("mealRow");
+  var vegBtn = $("vegBtn");
+  var portMinus = $("portMinus"), portPlus = $("portPlus"), portVal = $("portVal"), portLabel = $("portLabel");
+  var chipField = $("chipField"), ingInput = $("ingInput");
+  var cookBtn = $("cookBtn"), surpriseBtn = $("surpriseBtn"), clearBtn = $("clearBtn");
+  var notice = $("notice"), loader = $("loader"), loaderText = $("loaderText"), result = $("result");
+  var dishBadges = $("dishBadges"), dishName = $("dishName"), dishBlurb = $("dishBlurb");
+  var usesList = $("usesList"), extrasList = $("extrasList"), stepsList = $("stepsList");
+  var againBtn = $("againBtn"), printBtn = $("printBtn");
+
+  // ---------- Selector masă ----------
+  mealRow.addEventListener("click", function(e){
+    var btn = e.target.closest(".meal-opt");
+    if(!btn) return;
+    mealRow.querySelectorAll(".meal-opt").forEach(function(b){ b.classList.remove("active"); });
+    btn.classList.add("active");
+    meal = btn.getAttribute("data-meal");
+  });
+
+  // ---------- Comutator vegetarian ----------
+  vegBtn.addEventListener("click", function(){
+    vegetarian = !vegetarian;
+    vegBtn.classList.toggle("active", vegetarian);
+    vegBtn.setAttribute("aria-pressed", vegetarian ? "true" : "false");
+  });
+
+  // ---------- Selector porții ----------
+  function renderPortions(){
+    portVal.textContent = portions;
+    portLabel.textContent = (portions === 1) ? "porție" : "porții";
+    portMinus.disabled = (portions <= MIN_PORT);
+    portPlus.disabled = (portions >= MAX_PORT);
+  }
+  portMinus.addEventListener("click", function(){ if(portions > MIN_PORT){ portions--; renderPortions(); } });
+  portPlus.addEventListener("click", function(){ if(portions < MAX_PORT){ portions++; renderPortions(); } });
+
+  // ---------- Ingrediente (etichete) ----------
+  function renderChips(){
+    var chips = chipField.querySelectorAll(".chip");
+    chips.forEach(function(c){ c.remove(); });
+    ingredients.forEach(function(name, i){
+      var chip = document.createElement("span");
+      chip.className = "chip";
+      var label = document.createElement("span");
+      label.textContent = name;
+      var x = document.createElement("button");
+      x.type = "button";
+      x.setAttribute("aria-label", "Elimină " + name);
+      x.textContent = "×";
+      x.addEventListener("click", function(){ ingredients.splice(i,1); renderChips(); });
+      chip.appendChild(label);
+      chip.appendChild(x);
+      chipField.insertBefore(chip, ingInput);
+    });
+  }
+
+  function addIngredient(raw){
+    if(!raw) return;
+    raw.split(",").forEach(function(part){
+      var v = part.trim().replace(/\s+/g, " ");
+      if(!v) return;
+      var exists = ingredients.some(function(x){ return x.toLowerCase() === v.toLowerCase(); });
+      if(!exists) ingredients.push(v);
+    });
+    ingInput.value = "";
+    renderChips();
+  }
+
+  chipField.addEventListener("click", function(){ ingInput.focus(); });
+  ingInput.addEventListener("keydown", function(e){
+    if(e.key === "Enter" || e.key === ","){
+      e.preventDefault();
+      addIngredient(ingInput.value);
+    } else if(e.key === "Backspace" && ingInput.value === "" && ingredients.length){
+      ingredients.pop();
+      renderChips();
+    }
+  });
+  ingInput.addEventListener("blur", function(){ if(ingInput.value.trim()) addIngredient(ingInput.value); });
+
+  document.querySelectorAll(".quick").forEach(function(btn){
+    btn.addEventListener("click", function(){ addIngredient(btn.getAttribute("data-add")); ingInput.focus(); });
+  });
+
+  clearBtn.addEventListener("click", function(){
+    ingredients = [];
+    ingInput.value = "";
+    renderChips();
+    hide(result); hide(notice);
+    ingInput.focus();
+  });
+
+  // ---------- Ajutoare interfață ----------
+  function show(el){ el.classList.add("show"); }
+  function hide(el){ el.classList.remove("show"); }
+  function showNotice(kind, html){
+    notice.className = "notice " + kind + " show";
+    notice.innerHTML = html;
+  }
+  function setBusy(state, surprise){
+    busy = state;
+    cookBtn.disabled = state; surpriseBtn.disabled = state; clearBtn.disabled = state;
+    if(state){
+      hide(result); hide(notice);
+      loaderText.innerHTML = (surprise
+        ? "Inventez ceva creativ"
+        : "Caut prin frigider") + '<span class="dots"></span>';
+      show(loader);
+    } else {
+      hide(loader);
+    }
+  }
+
+  // ---------- Construirea cererii ----------
+  function buildPrompt(surprise){
+    var list = ingredients.slice();
+    var typed = ingInput.value.trim();
+    if(typed) list.push(typed);
+    var ingStr = list.join(", ");
+
+    var creativity = surprise
+      ? "Fii îndrăzneț și creativ: propune un fel neașteptat și interesant — combinații fusion, o prezentare ca la restaurant sau o idee pe care poate nu a mai încercat-o. Totuși, trebuie să poată fi gătit acasă."
+      : "Propune un fel practic, sigur și cu adevărat gustos, pe care oricine îl poate face acasă fără bătăi de cap.";
+
+    return [
+      "Ești „Bucătarul din Frigider”, un asistent culinar prietenos și practic.",
+      "Răspunde EXCLUSIV în limba română.",
+      "Persoana are aceste ingrediente la îndemână: " + ingStr + ".",
+      "Felul trebuie să fie potrivit pentru: " + meal + ".",
+      "Rețeta trebuie calculată pentru " + portions + (portions === 1 ? " porție" : " porții") + ", iar cantitatile din pași să fie pe măsură.",
+      (vegetarian ? "IMPORTANT: rețeta trebuie să fie VEGETARIANĂ — fără carne, pește sau fructe de mare. Dacă în lista de ingrediente există așa ceva, ignoră-le și propune o variantă vegetariană." : ""),
+      creativity,
+      "Reguli:",
+      "- Folosește în MARE PARTE ingredientele din listă. Poți presupune că sunt disponibile lucruri de bază (sare, piper, ulei, apă, unt).",
+      "- Orice ingrediente suplimentare care NU sunt în listă trebuie puse în „extras” și ținute pe scurt.",
+      "- Dă instrucțiuni clare, numerotate, ușor de urmat de un începător.",
+      "Răspunde DOAR cu un obiect JSON (fără markdown, fără alt text) cu EXACT aceste chei:",
+      "{",
+      '  "dishName": string (numele felului, în română),',
+      '  "blurb": string (o singură frază scurtă și apetisantă),',
+      '  "time": string (timpul de pregătire, ex: "aprox. 25 min"),',
+      '  "serves": string (numărul de porții, ex: "' + portions + (portions === 1 ? " porție" : " porții") + '"),',
+      '  "usesIngredients": string[] (ingredientele din lista lor pe care le folosește felul),',
+      '  "extras": string[] (ce ar mai trebui să cumpere/folosească; listă goală dacă nu e nevoie de nimic în plus față de cele de bază),',
+      '  "steps": string[] (instrucțiuni pas cu pas, o singură acțiune pe element)',
+      "}"
+    ].join("\n");
+  }
+
+  // ---------- Apel AI (gratuit, fără configurare) ----------
+  // Folosește motorul din aplicație dacă există, altfel un serviciu AI gratuit.
+  function askAI(prompt, surprise){
+    if(window.claude && typeof window.claude.complete === "function"){
+      return window.claude.complete(prompt);
+    }
+    return askFree(prompt, surprise);
+  }
+
+  function askFree(prompt, surprise){
+    var payload = {
+      model: "openai",
+      seed: Math.floor(Math.random() * 1e9),
+      temperature: surprise ? 1 : 0.6,
+      referrer: "bucatarul-din-frigider",
+      messages: [
+        { role: "system", content: "Ești „Bucătarul din Frigider”. Răspunzi mereu în limba română, cu un singur obiect JSON valid și nimic altceva." },
+        { role: "user", content: prompt }
+      ]
+    };
+    return fetch("https://text.pollinations.ai/openai", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function(res){
+      if(!res.ok){ throw { kind: "api", message: "Serviciul a răspuns cu codul " + res.status }; }
+      return res.text();
+    }).then(function(raw){
+      try {
+        var data = JSON.parse(raw);
+        if(data && data.choices && data.choices[0] && data.choices[0].message){
+          return data.choices[0].message.content || raw;
+        }
+        if(data && (data.dishName || data.steps)) return raw;
+      } catch(e){ /* text simplu */ }
+      return raw;
+    }).catch(function(err){
+      if(err && err.kind === "api") throw err;
+      var url = "https://text.pollinations.ai/" + encodeURIComponent(prompt) +
+                "?model=openai&seed=" + Math.floor(Math.random() * 1e9) + "&referrer=bucatarul-din-frigider";
+      return fetch(url).then(function(r){
+        if(!r.ok){ throw { kind: "api", message: "Serviciul a răspuns cu codul " + r.status }; }
+        return r.text();
+      });
+    });
+  }
+
+  function parseRecipe(text){
+    if(typeof text !== "string") throw new Error("bad");
+    var t = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    var start = t.indexOf("{");
+    var end = t.lastIndexOf("}");
+    if(start !== -1 && end !== -1 && end > start){
+      t = t.slice(start, end + 1);
+    }
+    return JSON.parse(t);
+  }
+
+  function asArray(v){
+    if(Array.isArray(v)) return v.filter(function(x){ return x != null && String(x).trim() !== ""; }).map(String);
+    if(v == null || v === "") return [];
+    return [String(v)];
+  }
+
+  function capitalize(s){ s = String(s||"").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  // ---------- Afișare rețetă ----------
+  function renderRecipe(r, surprise){
+    dishBadges.innerHTML = "";
+    if(surprise){
+      var bs = document.createElement("span");
+      bs.className = "badge surprise";
+      bs.textContent = "✨ Idee creativă";
+      dishBadges.appendChild(bs);
+    }
+    var bm = document.createElement("span");
+    bm.className = "badge meal";
+    bm.textContent = "🍴 " + capitalize(meal);
+    dishBadges.appendChild(bm);
+
+    if(vegetarian){
+      var bv = document.createElement("span");
+      bv.className = "badge meal";
+      bv.textContent = "🥕 Vegetarian";
+      dishBadges.appendChild(bv);
+    }
+
+    if(r.time && String(r.time).trim()){
+      var bt = document.createElement("span");
+      bt.className = "badge time";
+      bt.textContent = "⏱️ " + String(r.time).trim();
+      dishBadges.appendChild(bt);
+    }
+    var servesTxt = (r.serves && String(r.serves).trim())
+      ? String(r.serves).trim()
+      : (portions + (portions === 1 ? " porție" : " porții"));
+    var bp = document.createElement("span");
+    bp.className = "badge meta";
+    bp.textContent = "🍽️ " + servesTxt;
+    dishBadges.appendChild(bp);
+
+    dishName.textContent = r.dishName || "O idee gustoasă";
+    dishBlurb.textContent = r.blurb || "";
+    dishBlurb.style.display = r.blurb ? "" : "none";
+
+    function fill(ul, items, mark, emptyText){
+      ul.innerHTML = "";
+      var arr = asArray(items);
+      if(!arr.length && emptyText){
+        var li = document.createElement("li");
+        li.className = "empty-extras";
+        li.textContent = emptyText;
+        ul.appendChild(li);
+        return;
+      }
+      arr.forEach(function(it){
+        var li = document.createElement("li");
+        var m = document.createElement("span");
+        m.className = "mk";
+        m.textContent = mark;
+        var s = document.createElement("span");
+        s.textContent = it;
+        li.appendChild(m); li.appendChild(s);
+        ul.appendChild(li);
+      });
+    }
+    fill(usesList, r.usesIngredients, "●", "—");
+    fill(extrasList, r.extras, "＋", "Nimic — doar lucruri de bază din bucătărie! 🎉");
+
+    stepsList.innerHTML = "";
+    asArray(r.steps).forEach(function(step){
+      var li = document.createElement("li");
+      li.textContent = step;
+      stepsList.appendChild(li);
+    });
+
+    show(result);
+    result.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // ---------- Flux principal ----------
+  function cook(surprise){
+    if(busy) return;
+    if(ingInput.value.trim()) addIngredient(ingInput.value);
+
+    if(!ingredients.length){
+      showNotice("warn", "🧺 Adaugă mai întâi câteva ingrediente, apoi îți găsesc ceva de gătit.");
+      ingInput.focus();
+      return;
+    }
+
+    setBusy(true, surprise);
+    askAI(buildPrompt(surprise), surprise)
+      .then(function(text){
+        var recipe;
+        try { recipe = parseRecipe(text); }
+        catch(e){ throw { kind: "parse" }; }
+        setBusy(false);
+        renderRecipe(recipe, surprise);
+      })
+      .catch(function(err){
+        setBusy(false);
+        err = err || {};
+        if(err.kind === "parse"){
+          showNotice("err", "🤔 Am primit un răspuns, dar nu am putut citi rețeta. Mai încearcă o dată.");
+        } else if(err.kind === "api"){
+          showNotice("err", "<b>A apărut o eroare:</b> " + escapeHtml(err.message) + "<br>Te rog încearcă din nou peste câteva momente.");
+        } else if(err instanceof TypeError){
+          showNotice("err", "🌐 Nu am reușit să ajung la serviciu. Verifică-ți conexiunea la internet și încearcă din nou.");
+        } else {
+          showNotice("err", "Ceva n-a mers. Te rog încearcă din nou.");
+        }
+      });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c];
+    });
+  }
+
+  cookBtn.addEventListener("click", function(){ againBtn.dataset.surprise = ""; cook(false); });
+  surpriseBtn.addEventListener("click", function(){ againBtn.dataset.surprise = "1"; cook(true); });
+  againBtn.addEventListener("click", function(){ cook(!!againBtn.dataset.surprise); });
+  printBtn.addEventListener("click", function(){ window.print(); });
+
+  // ---------- Init ----------
+  renderPortions();
+  renderChips();
+  ingInput.focus();
+})();
+
+// Dacă un service worker vechi controlează pagina (cache), forțăm actualizarea
+// și reîncărcăm o singură dată când versiunea nouă preia controlul — astfel
+// interfața e mereu cea mai recentă (în română), fără refresh manual.
+(function(){
+  if(!("serviceWorker" in navigator)) return;
+  var refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", function(){
+    if(refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ try { r.update(); } catch(e){} });
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>
